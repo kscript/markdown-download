@@ -97,10 +97,10 @@ window.juejin = () => {
     //   }[s1] || s))
   }
   const markdwonDoc = html2markdown(getMarkdown(), {})
-  const fileName = ((query('.article-title') || {}).innerText || document.title) + '.md'
+  const fileName = ((query('.article-title') || {}).innerText || document.title)
   files.push({
-    name: fileName,
-    content: markdwonDoc
+    name: fileName + '.md',
+    content:  markdwonDoc + '\n\n' + '> 当前文档由 [markdown文档下载插件](https://github.com/kscript/markdown-download) 下载, 原文链接: [' + fileName + '](' + location.href + ')  '
   })
   copyText(markdwonDoc)
   sendMessage({
