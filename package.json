@@ -1,0 +1,39 @@
+{
+  "name": "markdown-download",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "npx webpack",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://kscript: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@github.com/kscript/markdown-download.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kscript/markdown-download/issues"
+  },
+  "homepage": "https://github.com/kscript/markdown-download#readme",
+  "browser": [
+    "chrome > 49"
+  ],
+  "devDependencies": {
+    "@babel/core": "^7.16.0",
+    "@babel/plugin-transform-runtime": "^7.16.0",
+    "@babel/preset-env": "^7.16.0",
+    "@babel/runtime-corejs2": "^7.16.3",
+    "babel-loader": "^8.2.3",
+    "babel-runtime": "^6.26.0",
+    "copy-webpack-plugin": "^9.0.1",
+    "core-js": "^2.6.12",
+    "html-to-md": "^0.5.3",
+    "jszip": "^3.7.1",
+    "md5": "^2.3.0",
+    "webpack": "^5.63.0",
+    "webpack-cli": "^4.9.1"
+  }
+}
