@@ -6,7 +6,7 @@
   "scripts": {
     "build": "npx webpack",
     "release": "npm run build && npm run zip",
-    "zip": "node src/zip.js",
+    "zip": "node build/zip.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

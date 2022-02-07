@@ -7,6 +7,14 @@ const getExt = (fileName) => {
 const query = (selector, context = document) => {
   return context.querySelector(selector)
 }
+const getText = (selector, context = document) => {
+  const el = query(selector, context) || {}
+  return el.innerText || ''
+}
+const getAttribute = (val, selector, context = document) => {
+  const el = query(selector, context) || {}
+  return el.getAttribute(val) || ''
+}
 const queryAll = (selector, context = document) => {
   return [].slice.apply(context.querySelectorAll(selector))
 }
@@ -67,6 +75,56 @@ const sendMessage = (options, onsuccess, onerror, retry) => {
   })
 }
 
+const formatDate = (str, t) => {
+  t = typeof t === 'string' || !isNaN(t) ? new Date(t) : t
+  if (t instanceof Date === false) {
+    t = new Date()
+  }
+  const obj = {
+    yyyyyyyy: t.getFullYear(),
+    yy: t.getFullYear(),
+    MM: t.getMonth()+1,
+    dd: t.getDate(),
+    HH: t.getHours(),
+    hh: t.getHours() % 12,
+    mm: t.getMinutes(),
+    ss: t.getSeconds(),
+    ww: '日一二三四五六'.split('')[t.getDay()]
+  };
+  return str.replace(/([a-z]+)/ig, function ($1){
+    return (obj[$1+$1] === 0 ? '0' : obj[$1+$1]) || ('0' + obj[$1]).slice(-2);
+  });
+}
+
+const setInfo = (data) => {
+  data = Object.assign({
+    date: formatDate('yyyy-MM-dd HH:mm:ss'),
+    coypright: false,
+    url: location.href,
+    description: '转载',
+  }, data instanceof Object ? data : {})
+  return `---
+  title: {{title}}
+  date: {{date}}
+  copyright: {{coypright}}
+  author: {{author}}
+  home: {{home}}
+  origin: {{origin}}
+  url: {{url}}
+  tag: {{tag}}
+  categories: {{categories}}
+  description: {{description}}
+  ---
+  `.replace(/\n\s+/g, '\n').replace(/\{\{(.*?)\}\}/g, (s, s1) => data[s1] === void 0 ? '' : data[s1])
+}
+
+const getMarkdown = (markdownBody) => {
+  return markdownBody.innerHTML
+  .replace(/<(\/|)(pre|p|figcaption|figure)>/g, '')
+  // .replace(/(&lt;|&gt;)/g, (s, s1) => ({
+  //   '&lt;': '<', '&gt;': '>'
+  //   }[s1] || s))
+}
 window.juejin = () => {
   const markdownBody = query('.markdown-body').cloneNode(true)
   queryAll('.copy-code-btn', markdownBody).map(item => item.parentElement.removeChild(item))
@@ -79,25 +137,25 @@ window.juejin = () => {
       const text = '```' + (lang ? ' ' + lang : '') + br + item.innerText + br + '```' + br
       item.parentElement.replaceChild(document.createTextNode(text), item)
   })
+  const fileName = (getText('.article-title') || document.title)
+  const info = setInfo({
+    title: fileName,
+    origin: 'juejin',
+    author: getText('.username .name'),
+    home: location.origin + getAttribute('href', '.username'),
+    description: markdownBody.innerText.slice(0, 50) + '...',
+  })
+  const markdwonDoc = html2markdown(info + getMarkdown(markdownBody), {})
   const files = queryAll('img', markdownBody).map(item => {
     const url = item.src
     const ext = getExt(url)
-    const name = md5(url) + (ext ? '.' + ext : '')
+    const name = fileName + '/' + md5(url) + (ext ? '.' + ext : '')
     item.src = './' + name
     return {
       name,
       downloadUrl: url
     }
   })
-  const getMarkdown = () => {
-    return markdownBody.innerHTML
-    .replace(/<(\/|)(pre|p|figcaption|figure)>/g, '')
-    // .replace(/(&lt;|&gt;)/g, (s, s1) => ({
-    //   '&lt;': '<', '&gt;': '>'
-    //   }[s1] || s))
-  }
-  const markdwonDoc = html2markdown(getMarkdown(), {})
-  const fileName = ((query('.article-title') || {}).innerText || document.title)
   files.push({
     name: fileName + '.md',
     content:  markdwonDoc + '\n\n' + '> 当前文档由 [markdown文档下载插件](https://github.com/kscript/markdown-download) 下载, 原文链接: [' + fileName + '](' + location.href + ')  '
