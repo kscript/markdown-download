@@ -7,17 +7,21 @@ const getExt = (fileName) => {
 const query = (selector, context = document) => {
   return context.querySelector(selector)
 }
+
 const getText = (selector, context = document) => {
   const el = query(selector, context) || {}
   return el.innerText || ''
 }
+
 const getAttribute = (val, selector, context = document) => {
-  const el = query(selector, context) || {}
-  return el.getAttribute(val) || ''
+  const el = query(selector, context)
+  return el ? el.getAttribute(val) || '' : ''
 }
+
 const queryAll = (selector, context = document) => {
   return [].slice.apply(context.querySelectorAll(selector))
 }
+
 const copyText = (text) => {
   const copyText = document.createElement('textarea')
   copyText.style.position = 'absolute'
@@ -126,31 +130,80 @@ const getMarkdown = (markdownBody) => {
   //   }[s1] || s))
 }
 
-const juejin = () => {
-  const markdownBody = query('.markdown-body').cloneNode(true)
-  queryAll('.copy-code-btn', markdownBody).map(item => item.parentElement.removeChild(item))
-  queryAll('style', markdownBody).map(item => item.parentElement.removeChild(item))
-  queryAll('a', markdownBody).map(item => item.href = item.title)
+const insertAfter = (newElement, targetElement) => {
+  const parent = targetElement.parentNode
+  if(parent.lastChild === targetElement){
+    parent.appendChild(newElement)
+  }else{
+    parent.insertBefore(newElement, targetElement.nextSibling)
+  }
+}
+
+const extract = (options) => {
+  const defaultOptions = {
+    origin: 'juejin',
+    // 处理链接
+    link: true,
+    // 处理段落
+    paragraph: false,
+    // 处理换行
+    br: false,
+    // 处理代码块
+    code: false,
+    selectors: {
+      title: '.article-title',
+      body: '.markdown-body',
+      copyBtn: '.copy-code-btn',
+      userName: '.username .name',
+      userLink: '.username',
+      invalid: 'style',
+      unpack: ''
+    }
+  }
+  options = Object.assign({}, defaultOptions, options instanceof Object ? options : {})
+  const origin = options.origin || 'juejin'
+  const selectors = Object.assign({}, defaultOptions.selectors, options.selectors instanceof Object ? options.selectors : {})
+
+  const markdownBody = query(selectors.body).cloneNode(true)
+  queryAll(selectors.copyBtn, markdownBody).map(item => item.parentElement.removeChild(item))
   queryAll('[data-id]', markdownBody).map(item => item.removeAttribute('data-id'))
-  queryAll('code', markdownBody).map(item => {
-      const br = /copyable/.test(item.className) ? '\n' : ''
-      const lang = item.getAttribute('lang') || ''
+  if (selectors.invalid) {
+    queryAll(selectors.invalid, markdownBody).map(item => item.parentElement.removeChild(item))
+  }
+  if (selectors.unpack) {
+    queryAll(selectors.unpack, markdownBody).map(item => {
+      const span = document.createElement('span')
+      span.innerHTML = item.innerHTML
+      insertAfter(document.createElement('br'), item)
+      item.parentElement.replaceChild(span, item)
+    })
+  }
+  if (options.link) {
+    queryAll('a', markdownBody).map(item => item.href = item.title)
+  }
+  if (options.code) {
+    queryAll('code', markdownBody).map(item => {
+      const br = options.br || /copyable/.test(item.className) ? '\n' : ''
+      const lang = item.getAttribute('lang') || (item.className.split('-') || {})[1] || ''
       const text = '```' + (lang ? ' ' + lang : '') + br + item.innerText + br + '```' + br
       item.parentElement.replaceChild(document.createTextNode(text), item)
-  })
-  const fileName = (getText('.article-title') || document.title)
+    })
+  }
+
+  const fileName = (getText(selectors.title) || document.title)
+  const realName = fileName.replace(/[\\\/\?<>:'\*\|]/g, '_')
   const info = setInfo({
     title: fileName,
-    origin: 'juejin',
-    author: getText('.username .name'),
-    home: location.origin + getAttribute('href', '.username'),
+    origin: origin,
+    author: getText(selectors.userName),
+    home: location.origin + getAttribute('href', selectors.userLink),
     description: markdownBody.innerText.slice(0, 50) + '...',
   })
   const markdwonDoc = html2markdown(info + getMarkdown(markdownBody), {})
   const files = queryAll('img', markdownBody).map(item => {
     const url = item.src
     const ext = getExt(url)
-    const name = fileName + '/' + md5(url) + (ext ? '.' + ext : '')
+    const name = realName + '/' + md5(url) + (ext ? '.' + ext : '')
     item.src = './' + name
     return {
       name,
@@ -158,7 +211,7 @@ const juejin = () => {
     }
   })
   files.push({
-    name: fileName + '.md',
+    name: realName + '.md',
     content:  markdwonDoc + '\n\n' + '> 当前文档由 [markdown文档下载插件](https://github.com/kscript/markdown-download) 下载, 原文链接: [' + fileName + '](' + location.href + ')  '
   })
   copyText(markdwonDoc)
@@ -169,13 +222,38 @@ const juejin = () => {
   })
 }
 
+const zhihu = () => {
+  extract({
+    origin: 'zhihu',
+    link: false,
+    paragraph: true,
+    br: true,
+    code: false,
+    selectors: {
+      title: '.Post-Title',
+      body: '.Post-RichText',
+      copyBtn: '.copy-code-btn',
+      userName: '.AuthorInfo-name .Popover .UserLink-link',
+      userLink: '.AuthorInfo-name .Popover .UserLink-link',
+      invalid: 'noscript,.ZVideoLinkCard-author',
+      unpack: 'p,figure'
+    }
+  })
+}
+
+const juejin = () => {
+  extract()
+}
+
 const websites = {
-  juejin
+  juejin,
+  zhihu
 }
 
 window.websites = websites
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log(message)
   if (message instanceof Object) {
     if (message.type === 'download') {
       if (typeof websites[message.website] === 'function') {

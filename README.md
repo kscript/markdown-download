@@ -15,4 +15,5 @@ npm run build
 4. 访问已支持的网站的文章详情页面, 点击插件图标
 
 ## 已支持的网站
-[掘金](https://juejin.cn/)
+[掘金](https://juejin.cn/)  
+[知乎专栏](https://zhuanlan.zhihu.com/)  

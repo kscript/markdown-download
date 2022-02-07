@@ -127,12 +127,23 @@ const sendMessage = (message, onsuccess) => {
     }
   })
 }
-
 chrome.browserAction.onClicked.addListener(function (tab) {
-  if (/^(http(s|):|)\/\/juejin\.(im|cn)/i.test(tab.url)) {
+  const host = new URL(tab.url).host
+  if ([
+    'juejin.im',
+    'juejin.cn',
+  ].includes(host)) {
     sendMessage({
       type: 'download',
       website: 'juejin'
+    })
+  } else
+  if ([
+    'zhuanlan.zhihu.com'
+  ].includes(host)) {
+    sendMessage({
+      type: 'download',
+      website: 'zhihu'
     })
   }
 });
