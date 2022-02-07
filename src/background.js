@@ -115,3 +115,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   return true
 })
+
+const sendMessage = (message, onsuccess) => {
+  chrome.tabs.query({
+    active: true,
+    currentWindow: true
+  }, (tabs) => {
+    console.log(tabs)
+    if (tabs[0]) {
+      chrome.tabs.sendMessage(tabs[0].id, message, onsuccess)
+    }
+  })
+}
+
+chrome.browserAction.onClicked.addListener(function (tab) {
+  if (/^(http(s|):|)\/\/juejin\.(im|cn)/i.test(tab.url)) {
+    sendMessage({
+      type: 'download',
+      website: 'juejin'
+    })
+  }
+});

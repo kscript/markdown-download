@@ -125,7 +125,8 @@ const getMarkdown = (markdownBody) => {
   //   '&lt;': '<', '&gt;': '>'
   //   }[s1] || s))
 }
-window.juejin = () => {
+
+const juejin = () => {
   const markdownBody = query('.markdown-body').cloneNode(true)
   queryAll('.copy-code-btn', markdownBody).map(item => item.parentElement.removeChild(item))
   queryAll('style', markdownBody).map(item => item.parentElement.removeChild(item))
@@ -167,3 +168,20 @@ window.juejin = () => {
     files
   })
 }
+
+const websites = {
+  juejin
+}
+
+window.websites = websites
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message instanceof Object) {
+    if (message.type === 'download') {
+      if (typeof websites[message.website] === 'function') {
+        websites[message.website]()
+      }
+    }
+  }
+  sendResponse('')
+})
