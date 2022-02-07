@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build": "npx webpack",
+    "release": "npm run build && npm run zip",
+    "zip": "node src/zip.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -26,6 +28,7 @@
     "@babel/plugin-transform-runtime": "^7.16.0",
     "@babel/preset-env": "^7.16.0",
     "@babel/runtime-corejs2": "^7.16.3",
+    "adm-zip": "^0.5.9",
     "babel-loader": "^8.2.3",
     "babel-runtime": "^6.26.0",
     "copy-webpack-plugin": "^9.0.1",
