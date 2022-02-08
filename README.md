@@ -17,3 +17,4 @@ npm run build
 ## 已支持的网站
 [掘金](https://juejin.cn/)  
 [知乎专栏](https://zhuanlan.zhihu.com/)  
+[思否专栏](https://segmentfault.com/)  

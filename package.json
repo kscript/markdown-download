@@ -40,6 +40,8 @@
     "webpack-cli": "^4.9.1"
   },
   "dependencies": {
-    "fs-extra": "^10.0.0"
+    "fs-extra": "^10.0.0",
+    "path": "^0.12.7",
+    "path-browserify": "^1.0.1"
   }
 }

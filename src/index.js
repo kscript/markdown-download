@@ -1,7 +1,10 @@
 const md5 = require('md5');
+const path = require('path-browserify');
 const html2markdown = require('html-to-md');
+const websites = require('./websites')
+window.websites = websites
 const getExt = (fileName) => {
-  return fileName.split('.').pop()
+  return path.parse(fileName).ext.slice(1)
 }
 
 const query = (selector, context = document) => {
@@ -124,7 +127,7 @@ const setInfo = (data) => {
 
 const getMarkdown = (markdownBody) => {
   return markdownBody.innerHTML
-  .replace(/<(\/|)(pre|p|figcaption|figure)>/g, '')
+  // .replace(/<(\/|)(pre|p|figcaption|figure)>/g, '')
   // .replace(/(&lt;|&gt;)/g, (s, s1) => ({
   //   '&lt;': '<', '&gt;': '>'
   //   }[s1] || s))
@@ -144,8 +147,6 @@ const extract = (options) => {
     origin: 'juejin',
     // 处理链接
     link: true,
-    // 处理段落
-    paragraph: false,
     // 处理换行
     br: false,
     // 处理代码块
@@ -192,14 +193,6 @@ const extract = (options) => {
 
   const fileName = (getText(selectors.title) || document.title)
   const realName = fileName.replace(/[\\\/\?<>:'\*\|]/g, '_')
-  const info = setInfo({
-    title: fileName,
-    origin: origin,
-    author: getText(selectors.userName),
-    home: location.origin + getAttribute('href', selectors.userLink),
-    description: markdownBody.innerText.slice(0, 50) + '...',
-  })
-  const markdwonDoc = html2markdown(info + getMarkdown(markdownBody), {})
   const files = queryAll('img', markdownBody).map(item => {
     const url = item.src
     const ext = getExt(url)
@@ -210,6 +203,14 @@ const extract = (options) => {
       downloadUrl: url
     }
   })
+  const info = setInfo({
+    title: fileName,
+    origin: origin,
+    author: getText(selectors.userName),
+    home: location.origin + getAttribute('href', selectors.userLink),
+    description: markdownBody.innerText.slice(0, 50) + '...',
+  })
+  const markdwonDoc = html2markdown(info + getMarkdown(markdownBody), {})
   files.push({
     name: realName + '.md',
     content:  markdwonDoc + '\n\n' + '> 当前文档由 [markdown文档下载插件](https://github.com/kscript/markdown-download) 下载, 原文链接: [' + fileName + '](' + location.href + ')  '
@@ -222,42 +223,11 @@ const extract = (options) => {
   })
 }
 
-const zhihu = () => {
-  extract({
-    origin: 'zhihu',
-    link: false,
-    paragraph: true,
-    br: true,
-    code: false,
-    selectors: {
-      title: '.Post-Title',
-      body: '.Post-RichText',
-      copyBtn: '.copy-code-btn',
-      userName: '.AuthorInfo-name .Popover .UserLink-link',
-      userLink: '.AuthorInfo-name .Popover .UserLink-link',
-      invalid: 'noscript,.ZVideoLinkCard-author',
-      unpack: 'p,figure'
-    }
-  })
-}
-
-const juejin = () => {
-  extract()
-}
-
-const websites = {
-  juejin,
-  zhihu
-}
-
-window.websites = websites
-
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log(message)
   if (message instanceof Object) {
     if (message.type === 'download') {
       if (typeof websites[message.website] === 'function') {
-        websites[message.website]()
+        websites[message.website](extract)
       }
     }
   }
