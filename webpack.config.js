@@ -40,7 +40,15 @@ module.exports = {
     }),
     new CopyPlugin({
       patterns: [
-        { from: 'src', to: '' },
+        {
+          from: 'src',
+          to: '' , 
+          globOptions: {
+            dot: true,
+            gitignore: true,
+            ignore: ["**/websites/**"],
+          }
+        },
       ],
     }),
   ]
