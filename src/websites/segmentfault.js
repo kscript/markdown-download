@@ -1,4 +1,8 @@
-module.exports = (extract) => {
+export const config = {
+  hosts: ['segmentfault.com']
+}
+
+export const apply = (extract) => {
   extract({
     origin: 'segmentfault',
     link: false,
@@ -14,4 +18,9 @@ module.exports = (extract) => {
       unpack: ''
     }
   })
+}
+
+export default {
+  config,
+  apply
 }

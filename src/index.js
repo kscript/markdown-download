@@ -1,8 +1,8 @@
-const md5 = require('md5');
-const path = require('path-browserify');
-const html2markdown = require('html-to-md');
-const websites = require('./websites')
-window.websites = websites
+import md5 from 'md5'
+import path from 'path-browserify'
+import html2markdown from 'html-to-md'
+import { websites, hooks } from './websites'
+
 const getExt = (fileName) => {
   return path.parse(fileName).ext.slice(1)
 }
@@ -23,19 +23,6 @@ const getAttribute = (val, selector, context = document) => {
 
 const queryAll = (selector, context = document) => {
   return [].slice.apply(context.querySelectorAll(selector))
-}
-
-const copyText = (text) => {
-  const copyText = document.createElement('textarea')
-  copyText.style.position = 'absolute'
-  copyText.style.left = '-9999px'
-  copyText.style.width = '1px'
-  copyText.style.height = '1px'
-  copyText.value = text
-  document.body.appendChild(copyText)
-  copyText.select()
-  document.execCommand('copy')
-  document.body.removeChild(copyText)
 }
 
 const noop = (func, defaultFunc) => {
@@ -143,6 +130,7 @@ const insertAfter = (newElement, targetElement) => {
 }
 
 const extract = (options) => {
+  const context = {}
   const defaultOptions = {
     origin: 'juejin',
     // 处理链接
@@ -164,8 +152,13 @@ const extract = (options) => {
   options = Object.assign({}, defaultOptions, options instanceof Object ? options : {})
   const origin = options.origin || 'juejin'
   const selectors = Object.assign({}, defaultOptions.selectors, options.selectors instanceof Object ? options.selectors : {})
-
   const markdownBody = query(selectors.body).cloneNode(true)
+  const hook = hooks[origin] || {}
+
+  noop(hook.beforeExtract)(Object.assign(context, {
+    options,
+    markdownBody
+  }))
   queryAll(selectors.copyBtn, markdownBody).map(item => item.parentElement.removeChild(item))
   queryAll('[data-id]', markdownBody).map(item => item.removeAttribute('data-id'))
   if (selectors.invalid) {
@@ -190,7 +183,6 @@ const extract = (options) => {
       item.parentElement.replaceChild(document.createTextNode(text), item)
     })
   }
-
   const fileName = (getText(selectors.title) || document.title)
   const realName = fileName.replace(/[\\\/\?<>:'\*\|]/g, '_')
   const files = queryAll('img', markdownBody).map(item => {
@@ -208,14 +200,15 @@ const extract = (options) => {
     origin: origin,
     author: getText(selectors.userName),
     home: location.origin + getAttribute('href', selectors.userLink),
-    description: markdownBody.innerText.slice(0, 50) + '...',
+    description: markdownBody.innerText.replace(/^([\n\s]+)/g, '').slice(0, 50) + '...',
   })
+  noop(hook.extract)(context)
   const markdwonDoc = html2markdown(info + getMarkdown(markdownBody), {})
   files.push({
     name: realName + '.md',
     content:  markdwonDoc + '\n\n' + '> 当前文档由 [markdown文档下载插件](https://github.com/kscript/markdown-download) 下载, 原文链接: [' + fileName + '](' + location.href + ')  '
   })
-  copyText(markdwonDoc)
+  noop(hook.extractAfter)(Object.assign(context, { files }))
   sendMessage({
     type: 'download',
     fileName,

@@ -1,14 +1,23 @@
+export const websites = {}
+export const hooks = {}
+export const configs = []
 const files = require.context('./', true, /\.js/)
-const modules = {}
-
 files.keys().forEach(key => {
-  const name = (key.split('/').pop().split('.') || {}) [0]
+  const website = (key.split('/').pop().split('.') || {}) [0]
   if (![
-    'index',
-    'list',
-  ].includes(name)) {
-    modules[name] = files(key)
+    'index'
+  ].includes(website)) {
+    const { apply, config, hook } = files(key)
+    websites[website] = apply
+    hooks[website] = hook instanceof Object ? hook : {}
+    configs.push(Object.assign({
+      website
+    }, config instanceof Object ? config : {}))
   }
 })
 
-module.exports = modules
+export default {
+  websites,
+  configs,
+  hooks
+}

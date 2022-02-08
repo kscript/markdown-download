@@ -1,8 +1,7 @@
-const md5 = require('md5');
-const JSZip = require("jszip");
-const FileSaver = require("jszip/vendor/FileSaver.js");
-const list = require('./websites/list')
-
+import md5 from 'md5'
+import JSZip from 'jszip'
+import FileSaver from 'jszip/vendor/FileSaver'
+import { configs } from './websites'
 const noop = (func, defaultFunc) => {
   return typeof func === 'function' ? func : typeof defaultFunc === 'function' ? defaultFunc : () => {}
 }
@@ -131,7 +130,7 @@ const sendMessage = (message, onsuccess) => {
 
 chrome.browserAction.onClicked.addListener(function (tab) {
   const host = new URL(tab.url).host
-  list.some(({ website, hosts }) => {
+  configs.some(({ website, hosts }) => {
     if (website && Array.isArray(hosts) && hosts.includes(host)) {
       sendMessage({
         type: 'download',
@@ -139,4 +138,4 @@ chrome.browserAction.onClicked.addListener(function (tab) {
       })
     }
   })
-});
+})

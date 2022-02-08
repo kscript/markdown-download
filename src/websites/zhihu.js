@@ -1,4 +1,8 @@
-module.exports = (extract) => {
+export const config = {
+  hosts: ['zhuanlan.zhihu.com']
+}
+
+export const apply = (extract) => {
   extract({
     origin: 'zhihu',
     link: false,
@@ -14,4 +18,9 @@ module.exports = (extract) => {
       unpack: 'p,figure'
     }
   })
+}
+
+export default {
+  config,
+  apply
 }
