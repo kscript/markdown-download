@@ -1,0 +1,1 @@
+module.exports=o=>{o({origin:"zhihu",link:!1,br:!0,code:!1,selectors:{title:".Post-Title",body:".Post-RichText",copyBtn:".copy-code-btn",userName:".AuthorInfo-name .Popover .UserLink-link",userLink:".AuthorInfo-name .Popover .UserLink-link",invalid:"noscript,.ZVideoLinkCard-author",unpack:"p,figure"}})};

@@ -1,0 +1,1 @@
+const files=require.context("./",!0,/\.js/),modules={};files.keys().forEach((s=>{const e=(s.split("/").pop().split(".")||{})[0];["index","list"].includes(e)||(modules[e]=files(s))})),module.exports=modules;
