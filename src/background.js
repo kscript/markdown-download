@@ -1,6 +1,7 @@
 const md5 = require('md5');
 const JSZip = require("jszip");
 const FileSaver = require("jszip/vendor/FileSaver.js");
+const list = require('./websites/list')
 
 const noop = (func, defaultFunc) => {
   return typeof func === 'function' ? func : typeof defaultFunc === 'function' ? defaultFunc : () => {}
@@ -127,23 +128,15 @@ const sendMessage = (message, onsuccess) => {
     }
   })
 }
+
 chrome.browserAction.onClicked.addListener(function (tab) {
   const host = new URL(tab.url).host
-  if ([
-    'juejin.im',
-    'juejin.cn',
-  ].includes(host)) {
-    sendMessage({
-      type: 'download',
-      website: 'juejin'
-    })
-  } else
-  if ([
-    'zhuanlan.zhihu.com'
-  ].includes(host)) {
-    sendMessage({
-      type: 'download',
-      website: 'zhihu'
-    })
-  }
+  list.some(({ website, hosts }) => {
+    if (website && Array.isArray(hosts) && hosts.includes(host)) {
+      sendMessage({
+        type: 'download',
+        website
+      })
+    }
+  })
 });
