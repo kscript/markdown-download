@@ -9,7 +9,7 @@ cd download-markdown
 npm install
 npm run build
 ```
-> 也可以直接使用crx文件夹中的文件
+> 也可以在clone后使用`gh-pages`分支中的文件
 2. 在chrome浏览器扩展程序中`开启开发者模式`
 3. 选择`加载已解压的扩展程序`, 选中项目打包后的dist文件夹
 4. 访问已支持的网站的文章详情页面, 点击插件图标
