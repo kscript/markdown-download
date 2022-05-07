@@ -183,13 +183,15 @@ const extract = (options) => {
       item.parentElement.replaceChild(document.createTextNode(text), item)
     })
   }
+  const urls = []
   const fileName = (getText(selectors.title) || document.title)
   const realName = fileName.replace(/[\\\/\?<>:'\*\|]/g, '_')
   const files = queryAll('img', markdownBody).map(item => {
-    const url = item.src
+    const url = item.src.replace(/\?$/, '')
     const ext = getExt(url)
     const name = realName + '/' + md5(url) + (ext ? '.' + ext : '')
     item.src = './' + name
+    options.urls !== false && urls.push(url)
     return {
       name,
       downloadUrl: url
@@ -200,13 +202,17 @@ const extract = (options) => {
     origin: origin,
     author: getText(selectors.userName),
     home: location.origin + getAttribute('href', selectors.userLink),
-    description: markdownBody.innerText.replace(/^([\n\s]+)/g, '').slice(0, 50) + '...',
+    description: markdownBody.innerText.replace(/^([\n\s]+)/g, '').replace(/\n/, ' ').slice(0, 50) + '...',
   })
   noop(hook.extract)(context)
   const markdwonDoc = html2markdown(info + getMarkdown(markdownBody), {})
   files.push({
     name: realName + '.md',
     content:  markdwonDoc + '\n\n' + '> 当前文档由 [markdown文档下载插件](https://github.com/kscript/markdown-download) 下载, 原文链接: [' + fileName + '](' + location.href + ')  '
+  })
+  files.push({
+    name: realName + '/urls.json',
+    content: JSON.stringify(urls)
   })
   noop(hook.extractAfter)(Object.assign(context, { files }))
   sendMessage({
