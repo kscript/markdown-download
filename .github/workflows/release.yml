@@ -1,0 +1,49 @@
+name: build and deploy
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Install Node.js, NPM
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14
+
+      - name: Check out branch
+        uses: actions/checkout@v2
+        with:
+          ref: master
+
+      - name: Install and Build
+        run: |
+          npm ci
+          npm run build
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: dist
+          path: dist
+
+  deploy:
+    concurrency: ci-${{ github.ref }}
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v1
+        with:
+          name: dist
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4.3.0
+        with:
+          branch: gh-pages
+          folder: 'dist'
