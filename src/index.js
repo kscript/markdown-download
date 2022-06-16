@@ -129,6 +129,17 @@ const insertAfter = (newElement, targetElement) => {
   }
 }
 
+const getUrl = (prefix, link) => {
+  if (!link) return ''
+  if (/^(http|https)/.test(link)) {
+    return link
+  }
+  if (/^\/\//.test(link)) {
+    return prefix.split('//')[0] + link
+  }
+  return prefix + link
+}
+
 const extract = (options) => {
   const context = {}
   const defaultOptions = {
@@ -201,8 +212,8 @@ const extract = (options) => {
     title: fileName,
     origin: origin,
     author: getText(selectors.userName),
-    home: location.origin + getAttribute('href', selectors.userLink),
-    description: markdownBody.innerText.replace(/^([\n\s]+)/g, '').replace(/\n/, ' ').slice(0, 50) + '...',
+    home: getUrl(location.origin, getAttribute('href', selectors.userLink)),
+    description: markdownBody.innerText.replace(/^([\n\s]+)/g, '').replace(/\n/g, ' ').slice(0, 50) + '...',
   })
   noop(hook.extract)(context)
   const markdwonDoc = html2markdown(info + getMarkdown(markdownBody), {})
@@ -211,8 +222,8 @@ const extract = (options) => {
     content:  markdwonDoc + '\n\n' + '> 当前文档由 [markdown文档下载插件](https://github.com/kscript/markdown-download) 下载, 原文链接: [' + fileName + '](' + location.href + ')  '
   })
   files.push({
-    name: realName + '/urls.json',
-    content: JSON.stringify(urls)
+    name: realName + '/urls',
+    content: urls.join('\n')
   })
   noop(hook.extractAfter)(Object.assign(context, { files }))
   sendMessage({
