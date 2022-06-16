@@ -128,14 +128,23 @@ const sendMessage = (message, onsuccess) => {
   })
 }
 
-chrome.browserAction.onClicked.addListener(function (tab) {
-  const host = new URL(tab.url).host
-  configs.some(({ website, hosts }) => {
-    if (website && Array.isArray(hosts) && hosts.includes(host)) {
+chrome.browserAction.onClicked.addListener((tab) => {
+  const { host } = new URL(tab.url)
+  const matched = configs.some(({ website, hosts }) => {
+    if (
+      website && Array.isArray(hosts) && hosts.some(item => item instanceof RegExp ? item.test(host) : item === host)
+    ) {
       sendMessage({
         type: 'download',
         website
       })
+      return true
     }
+  })
+  !matched && chrome.notifications.create(Date.now() + String(tab.id), { 
+    type : 'basic',
+    title : '下载提示',
+    message : '当前页面不支持下载',
+    iconUrl : '/icon.png'
   })
 })
