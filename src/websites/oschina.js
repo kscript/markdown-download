@@ -10,7 +10,7 @@ export const config = {
 	  code: false,
 	  selectors: {
 		title: '.article-box h1.article-box__title',
-		body: '.article-box .article-box__content',
+		body: '.article-box .article-box__content .detail-box',
 		copyBtn: '.copy-code-btn',
 		userName: '.article-box .article-box__meta .item-list .item:nth-child(2) a',
 		userLink: '.article-box .article-box__meta .item-list .item:nth-child(2) a',
