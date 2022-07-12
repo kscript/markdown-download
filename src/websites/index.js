@@ -7,12 +7,13 @@ files.keys().forEach(key => {
   if (![
     'index'
   ].includes(website)) {
-    const { apply, config, hook } = files(key)
-    websites[website] = apply
+    const config = files(key)
+    const { hook, options } = config
+    websites[website] = (extract) => extract(options)
     hooks[website] = hook instanceof Object ? hook : {}
     configs.push(Object.assign({
       website
-    }, config instanceof Object ? config : {}))
+    }, config))
   }
 })
 

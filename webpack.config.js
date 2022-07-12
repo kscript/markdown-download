@@ -1,10 +1,16 @@
 const webpack = require('webpack');
 const CopyPlugin = require('copy-webpack-plugin');
+
+const npmMode = process.env.BUILD_MODE === 'npm'
+const entry = npmMode ? {
+  'index': './src/broswer.js',
+} : {
+  'index': './src/index.js',
+  'background': './src/background.js'
+}
+
 module.exports = {
-  entry: {
-    'index': './src/index.js',
-    'background': './src/background.js'
-  },
+  entry,
   output: {
     filename: '[name].js',
     path: __dirname + '/dist',
@@ -38,6 +44,7 @@ module.exports = {
         NODE_ENV: '"production"'
       }
     }),
+  ].concat(npmMode ? [] : [
     new CopyPlugin({
       patterns: [
         {
@@ -46,10 +53,10 @@ module.exports = {
           globOptions: {
             dot: true,
             gitignore: true,
-            ignore: ["**/websites/**"],
+            ignore: ['**/websites/**', '**/broswer.js', '**/download.js'],
           }
         },
       ],
-    }),
-  ]
+    })
+  ])
 }
