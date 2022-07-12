@@ -150,6 +150,7 @@ const extract = (options) => {
     br: false,
     // 处理代码块
     code: false,
+    lazyKey: 'data-src',
     selectors: {
       title: '.article-title',
       body: '.markdown-body',
@@ -198,7 +199,8 @@ const extract = (options) => {
   const fileName = (getText(selectors.title) || document.title)
   const realName = fileName.replace(/[\\\/\?<>:'\*\|]/g, '_')
   const files = queryAll('img', markdownBody).map(item => {
-    const url = item.src.replace(/\?$/, '')
+    const src = item.getAttribute(options.lazyKey) || item.src
+    const url = src.replace(/\?$/, '')
     const ext = getExt(url)
     const name = realName + '/' + md5(url) + (ext ? '.' + ext : '')
     item.src = './' + name
