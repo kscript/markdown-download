@@ -2,12 +2,19 @@ import md5 from 'md5'
 import path from 'path-browserify'
 import html2markdown from 'html-to-md'
 import { websites, hooks } from './websites'
+import merge from 'webpack-merge'
+
+const isBroswer = typeof window !== 'undefined' && window instanceof Object
+const isExtension = isBroswer && window.chrome instanceof Object && window.chrome.runtime
 
 const getExt = (fileName) => {
   return path.parse(fileName).ext.slice(1)
 }
 
 const query = (selector, context = document) => {
+  if (selector instanceof NodeList || selector instanceof Node) {
+    return selector
+  }
   return context.querySelector(selector)
 }
 
@@ -45,28 +52,30 @@ const encodeOptionsData = (options) => {
 }
 
 const sendMessage = (options, onsuccess, onerror, retry) => {
-  retry = isNaN(retry) ? 3 : +retry
-  encodeOptionsData(options)
-  chrome.runtime.sendMessage(options, ([error, response, headers, xhr]) => {
-    if (!error) {
-      try {
-        const result = noop(onsuccess)(response, headers, xhr)
-        if (result === void 0) {
-          return response
+  if (isExtension) {
+    retry = isNaN(retry) ? 3 : +retry
+    encodeOptionsData(options)
+    chrome.runtime.sendMessage(options, ([error, response, headers, xhr]) => {
+      if (!error) {
+        try {
+          const result = noop(onsuccess)(response, headers, xhr)
+          if (result === void 0) {
+            return response
+          }
+          // onsuccess返回值不为undefined, 视为调用失败
+          error = result
+        } catch (err) {
+          // 执行onsuccess代码出错
+          error = err
         }
-        // onsuccess返回值不为undefined, 视为调用失败
-        error = result
-      } catch (err) {
-        // 执行onsuccess代码出错
-        error = err
       }
-    }
-    if (retry-- > 0) {
-      sendMessage(options, onsuccess, onerror, retry)
-    } else {
-      noop(onerror)(error, headers, xhr)
-    }
-  })
+      if (retry-- > 0) {
+        sendMessage(options, onsuccess, onerror, retry)
+      } else {
+        noop(onerror)(error, headers, xhr)
+      }
+    })
+  }
 }
 
 const formatDate = (str, t) => {
@@ -140,7 +149,7 @@ const getUrl = (prefix, link) => {
   return prefix + link
 }
 
-const extract = (options) => {
+const convert = (options, customOptions) => {
   const context = {}
   const defaultOptions = {
     origin: 'juejin',
@@ -161,10 +170,20 @@ const extract = (options) => {
       unpack: ''
     }
   }
-  options = Object.assign({}, defaultOptions, options instanceof Object ? options : {})
-  const origin = options.origin || 'juejin'
-  const selectors = Object.assign({}, defaultOptions.selectors, options.selectors instanceof Object ? options.selectors : {})
-  const markdownBody = query(selectors.body).cloneNode(true)
+  options = options instanceof Object ? options : {}
+  customOptions = customOptions instanceof Object ? customOptions : {}
+  options = merge({}, defaultOptions, options, customOptions)
+  if (options.context) {
+    if (typeof options.context === 'string') {
+      const el = document.createElement('div')
+      el.innerHTML = options.context
+      options.context = el
+    } else {
+      options.context = options.context instanceof Node ? options.context : void 0
+    }
+  }
+  const {origin, selectors} = options
+  const markdownBody = query(selectors.body, options.context).cloneNode(true)
   const hook = hooks[origin] || {}
 
   noop(hook.beforeExtract)(Object.assign(context, {
@@ -228,20 +247,32 @@ const extract = (options) => {
     content: urls.join('\n')
   })
   noop(hook.extractAfter)(Object.assign(context, { files }))
-  sendMessage({
+  return {
     type: 'download',
     fileName,
     files
-  })
+  }
 }
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message instanceof Object) {
-    if (message.type === 'download') {
-      if (typeof websites[message.website] === 'function') {
-        websites[message.website](extract)
+const extract = (options, customOptions) => {
+  const datas = convert(options, customOptions)
+  sendMessage(datas)
+  return datas
+}
+
+if (isBroswer) {
+  if (isExtension) {
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      if (message instanceof Object) {
+        if (message.type === 'download') {
+          if (typeof websites[message.website] === 'function') {
+            websites[message.website](extract)
+          }
+        }
       }
-    }
+      sendResponse('')
+    })
   }
-  sendResponse('')
-})
+}
+
+export default convert

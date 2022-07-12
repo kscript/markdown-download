@@ -1,7 +1,7 @@
 # markdown-download
 markdown文档下载 chrome插件
 
-## 使用方法
+## 作为插件使用
 1. 在命令行中执行拉取/安装/打包
 ``` cmd
 git clone https://github.com/kscript/download-markdown
@@ -14,6 +14,32 @@ npm run build
 3. 选择`加载已解压的扩展程序`, 选中项目打包后的dist文件夹
 4. 访问已支持的网站的文章详情页面, 等待文章内图片全部加载后, 点击插件图标
 
+## 作为模块使用
+### 安装
+```
+npm i markdown-downloader
+```
+### 使用
+> 由于会操作dom元素, 所以运行时需要在浏览器环境下
+``` js
+// 方式1. 导入模块
+import markdownDownload, { convert, download, websiteConfigs } from 'markdown-downloader'
+markdownDownload(websiteConfigs.juejin, {
+	// 包含所有信息的innerHTML文本
+	context: ``
+})
+```
+```html
+<!-- 方式2. 直接使用脚本文件 -->
+<script src="./markdownDownload.js"></script>
+<script>
+	// 给window对象添加一个markdownDownload函数, convert, download, websiteConfigs作为其属性
+	markdownDownload(markdownDownload.websiteConfigs.juejin, {
+		// 包含所有信息的innerHTML文本
+		context: ``
+	})
+</script>
+```
 
 ## 已支持的网站
 [掘金](https://juejin.cn/)  
