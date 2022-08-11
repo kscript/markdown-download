@@ -148,8 +148,7 @@ const getUrl = (prefix, link) => {
   }
   return prefix + link
 }
-
-const convert = (options, customOptions) => {
+const convert = async (options, customOptions) => {
   const context = {}
   const defaultOptions = {
     origin: 'juejin',
@@ -170,9 +169,8 @@ const convert = (options, customOptions) => {
       unpack: ''
     }
   }
-  options = options instanceof Object ? options : {}
   customOptions = customOptions instanceof Object ? customOptions : {}
-  options = merge({}, defaultOptions, options, customOptions)
+  options = merge({}, defaultOptions, options instanceof Object ? options : {}, customOptions)
   if (options.context) {
     if (typeof options.context === 'string') {
       const el = document.createElement('div')
@@ -183,13 +181,14 @@ const convert = (options, customOptions) => {
     }
   }
   const {origin, selectors} = options
-  const markdownBody = query(selectors.body, options.context).cloneNode(true)
   const hook = hooks[origin] || {}
-
-  noop(hook.beforeExtract)(Object.assign(context, {
-    options,
-    markdownBody
+  const result = await noop(hook.beforeExtract)(Object.assign(context, {
+    options
   }))
+  if (result instanceof Object) {
+    return result
+  }
+  const markdownBody = query(selectors.body, options.context).cloneNode(true)
   queryAll(selectors.copyBtn, markdownBody).map(item => item.parentElement.removeChild(item))
   queryAll('[data-id]', markdownBody).map(item => item.removeAttribute('data-id'))
   if (selectors.invalid) {
@@ -246,7 +245,7 @@ const convert = (options, customOptions) => {
     name: realName + '/urls',
     content: urls.join('\n')
   })
-  noop(hook.extractAfter)(Object.assign(context, { files }))
+  noop(hook.afterExtract)(Object.assign(context, { files }))
   return {
     type: 'download',
     fileName,
@@ -254,19 +253,19 @@ const convert = (options, customOptions) => {
   }
 }
 
-const extract = (options, customOptions) => {
-  const datas = convert(options, customOptions)
+const extract = async (options, customOptions) => {
+  const datas = await convert(options, customOptions)
   sendMessage(datas)
   return datas
 }
 
 if (isBroswer) {
   if (isExtension) {
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
       if (message instanceof Object) {
         if (message.type === 'download') {
           if (typeof websites[message.website] === 'function') {
-            websites[message.website](extract)
+            await websites[message.website](extract)
           }
         }
       }
