@@ -1,11 +1,17 @@
 import md5 from 'md5'
 import JSZip from 'jszip'
 import FileSaver from 'jszip/vendor/FileSaver'
-const noop = (func, defaultFunc) => {
+
+// 每段数量上限
+export const partLimit = 1e3
+// 同时请求数上限
+export const requestLimit = 5
+
+export const noop = (func, defaultFunc) => {
   return typeof func === 'function' ? func : typeof defaultFunc === 'function' ? defaultFunc : () => {}
 }
 
-const ajax = (options) => {
+export const ajax = (options) => {
   var xhr = new XMLHttpRequest()
   options.method = options.method || 'get'
   xhr.responseType = options.dataType || 'json';
@@ -32,39 +38,79 @@ const ajax = (options) => {
   }
 }
 
-export const downloadZip = (fileName, files) => {
-  fileName = fileName || md5(files.map(item => item.downloadUrl).join('|'))
-  const zip = new JSZip()
-  const fetchFile = (file) =>{
-    return new Promise((resolve, reject) => {
-      if (file.content) {
-        const blob = new Blob([file.content], {type : file.type || 'text/plain'})
-        zip.file(file.name, blob)
-        resolve(blob)
-      } else {
-        ajax({
-          url: file.downloadUrl,
-          type: 'get',
-          data: '',
-          dataType: 'blob',
-          success: (blob) => {
-            zip.file(file.name, blob);
-            resolve(blob)
-          },
-          error: reject
+export const fetchBlobFile = (file) =>{
+  return new Promise((resolve, reject) => {
+    if (file.content) {
+      resolve(new Blob([file.content], {type : file.type || 'text/plain'}))
+    } else {
+      ajax({
+        url: file.downloadUrl,
+        type: 'get',
+        data: '',
+        dataType: 'blob',
+        success: (blob) => {
+          resolve(blob)
+        },
+        error: () => {
+          resolve(new Blob([file.downloadUrl], {type : 'text/plain'}))
+        }
+      })
+    }
+  })
+}
+
+export const partTask = (items, handler, num = requestLimit) => {
+  let index = 0
+  let list = items.slice(0)
+  let queue = Promise.resolve()
+  const result = []
+  while (list.length) {
+    const current = list.splice(0, num)
+    const currentIndex = index++
+    queue = queue.then(() => {
+      return new Promise((resolve) => {
+        Promise.all(handler(current, currentIndex)).then(datas => {
+          result.push.apply(result, datas)
         })
-      }
+        .finally(() => resolve(result))
+      })
     })
   }
-  return Promise.all(
-    files.map(file => fetchFile(file))
-  ).then((datas) => {
-    zip.generateAsync({
+  return queue
+}
+
+export const partRequest = (fileName, files) => {
+  const zip = new JSZip()
+  const handler = (files) => files.map(file => fetchBlobFile(file, zip).then(blob => {
+    zip.file(file.name, blob)
+    return blob
+  }))
+  return partTask(files, handler, requestLimit).then((datas) => {
+    return zip.generateAsync({
       type: "blob"
-    }).then(function(content) {
-      FileSaver(content, fileName + '.zip');
+    }).then((content) => {
+      return new Promise((resolve) => {
+        FileSaver(content, fileName);
+        setTimeout(() => {
+          resolve()
+        }, 1.5e4)
+      })
     })
   })
+}
+
+export const partDownload = (fileName, files) => {
+  const count = ~~(files.length / partLimit)
+  return partTask(files, (files, index) => {
+    const partMame = count >= 1 ? '-p' + (index + 1) + '-' + count : ''
+    const name = fileName + partMame + '.zip'
+    return [partRequest(name, files)]
+  }, partLimit)
+}
+
+export const downloadZip = (fileName, files) => {
+  fileName = fileName || md5(files.map(item => item.downloadUrl).join('|'))
+  return partDownload(fileName, files)
 }
 
 export default downloadZip
