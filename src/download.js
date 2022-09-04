@@ -2,10 +2,17 @@ import md5 from 'md5'
 import JSZip from 'jszip'
 import FileSaver from 'jszip/vendor/FileSaver'
 
-// 每段数量上限
-export const partLimit = 1e3
-// 同时请求数上限
-export const requestLimit = 5
+const defaultOptions = {
+  partLimit: 1e3,
+  requestLimit: 5
+}
+
+const options = Object.assign({}, defaultOptions)
+
+export const mergeOptions = (newOptions) => {
+  return Object.assign(options, defaultOptions, newOptions instanceof Object ? newOptions : {})
+}
+
 
 export const noop = (func, defaultFunc) => {
   return typeof func === 'function' ? func : typeof defaultFunc === 'function' ? defaultFunc : () => {}
@@ -59,13 +66,13 @@ export const fetchBlobFile = (file) =>{
   })
 }
 
-export const partTask = (items, handler, num = requestLimit) => {
+export const partTask = (items, handler, limit) => {
   let index = 0
   let list = items.slice(0)
   let queue = Promise.resolve()
   const result = []
   while (list.length) {
-    const current = list.splice(0, num)
+    const current = list.splice(0, limit)
     const currentIndex = index++
     queue = queue.then(() => {
       return new Promise((resolve) => {
@@ -79,7 +86,7 @@ export const partTask = (items, handler, num = requestLimit) => {
   return queue
 }
 
-export const partRequest = (fileName, files) => {
+export const partRequest = (fileName, files, { requestLimit } = options) => {
   const zip = new JSZip()
   const handler = (files) => files.map(file => fetchBlobFile(file, zip).then(blob => {
     zip.file(file.name, blob)
@@ -99,18 +106,18 @@ export const partRequest = (fileName, files) => {
   })
 }
 
-export const partDownload = (fileName, files) => {
+export const partDownload = (fileName, files, { partLimit } = options) => {
   const count = ~~(files.length / partLimit)
   return partTask(files, (files, index) => {
     const partMame = count >= 1 ? '-p' + (index + 1) + '-' + count : ''
     const name = fileName + partMame + '.zip'
-    return [partRequest(name, files)]
+    return [partRequest(name, files, options)]
   }, partLimit)
 }
 
-export const downloadZip = (fileName, files) => {
+export const downloadZip = (fileName, files, options = {}) => {
   fileName = fileName || md5(files.map(item => item.downloadUrl).join('|'))
-  return partDownload(fileName, files)
+  return partDownload(fileName, files, mergeOptions(options))
 }
 
 export default downloadZip

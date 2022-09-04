@@ -1,38 +1,48 @@
 import { configs } from './websites'
 import downloadZip from './download'
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  const getHeaders = (xhr) => {
-    const headers = {}
-    if (Array.isArray(message.responseHeaders)) {
-      message.responseHeaders.map(item => {
-        headers[item] = xhr.getResponseHeader(item)
-      })
+const getHeaders = (xhr, responseHeaders) => {
+  const headers = {}
+  if (Array.isArray(responseHeaders)) {
+    responseHeaders.map(item => {
+      headers[item] = xhr.getResponseHeader(item)
+    })
+  }
+  return headers
+}
+
+const sendCallback = (sendResponse, responseHeaders) => {
+  return {
+    sendSuccess (message, xhr) {
+      sendResponse([null, message, getHeaders(xhr, responseHeaders), xhr])
+    },
+    sendError (error, xhr) {
+      sendResponse([error, null, getHeaders(xhr, responseHeaders), xhr])
     }
-    return headers
   }
-  const sendSuccess = (message, xhr) => {
-    sendResponse([null, message, getHeaders(xhr), xhr])
-  }
-  const sendError = (error, xhr) => {
-    sendResponse([error, null, getHeaders(xhr), xhr])
-  }
-  if (/(get|post)/i.test(message.type)) {
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  const { type, responseHeaders } = message
+  const { url, data, dataType, callback } = message
+  const { fileName, files, options } = message
+  const { sendSuccess, sendError } = sendCallback(sendResponse, responseHeaders)
+  if (/(get|post)/i.test(type)) {
     ajax({
-      url: message.url,
-      method: message.type,
-      data: message.data,
-      dataType: message.dataType,
+      url,
+      method: type,
+      data,
+      dataType,
       success (data, xhr) {
-        if (/text|blob/i.test(message.dataType)) {
+        if (/text|blob/i.test(dataType)) {
           sendSuccess(data, xhr)
         } else {
-          const obj = message.dataType === 'text' ? data : JSON.parse(data)
-          const result = /^json$/i.test(message.dataType) ? {
-            callback: message.callback,
+          const obj = dataType === 'text' ? data : JSON.parse(data)
+          const result = /^json$/i.test(dataType) ? {
+            callback: noop(callback),
             data: obj
           } : data
-          if (typeof message.callback === 'string' && message.callback.length) {
+          if (typeof callback === 'string' && callback) {
             sendSuccess(result, xhr)
           } else {
             sendSuccess(obj, xhr)
@@ -43,8 +53,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendError(error, xhr)
       }
     })
-  } else if (message.type === 'download') {
-    downloadZip(message.fileName, message.files)
+  } else if (type === 'download') {
+    downloadZip(fileName, files, options)
   }
   return true
 })
