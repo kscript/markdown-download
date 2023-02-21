@@ -1,103 +1,22 @@
 import md5 from 'md5'
-import path from 'path-browserify'
 import html2markdown from 'html-to-md'
 import { websites, hooks } from './websites'
 import merge from 'webpack-merge'
+import 'mathjax/es5/tex-svg'
+import { 
+  isExtension,
+  getExt,
+  query,
+  getText,
+  getAttribute,
+  queryAll,
+  noop,
+  sendMessage,
+  formatDate,
+  insertAfter,
+  getUrl
+} from './utils'
 
-const isBroswer = typeof window !== 'undefined' && window instanceof Object
-const isExtension = isBroswer && window.chrome instanceof Object && window.chrome.runtime
-
-const getExt = (fileName) => {
-  return path.parse(fileName).ext.slice(1)
-}
-
-const query = (selector, context = document) => {
-  if (selector instanceof NodeList || selector instanceof Node) {
-    return selector
-  }
-  return context.querySelector(selector)
-}
-
-const getText = (selector, context = document) => {
-  const el = query(selector, context) || {}
-  return el.innerText || ''
-}
-
-const getAttribute = (val, selector, context = document) => {
-  const el = query(selector, context)
-  return el ? el.getAttribute(val) || '' : ''
-}
-
-const queryAll = (selector, context = document) => {
-  return [].slice.apply(context.querySelectorAll(selector))
-}
-
-const noop = (func, defaultFunc) => {
-  return typeof func === 'function' ? func : typeof defaultFunc === 'function' ? defaultFunc : () => {}
-}
-
-const encodeUrlData = (data) => {
-  let body = ''
-  for (let key in data) {
-    body += key + '=' + encodeURIComponent(data[key]) + '&'
-  }
-  return body.slice(0, -1)
-}
-
-const encodeOptionsData = (options) => {
-  if (options.stringify !== false && typeof options.data === 'object') {
-    options.data = encodeUrlData(options.data)
-  }
-  return options
-}
-
-const sendMessage = (options, onsuccess, onerror, retry) => {
-  if (isExtension) {
-    retry = isNaN(retry) ? 3 : +retry
-    encodeOptionsData(options)
-    chrome.runtime.sendMessage(options, ([error, response, headers, xhr]) => {
-      if (!error) {
-        try {
-          const result = noop(onsuccess)(response, headers, xhr)
-          if (result === void 0) {
-            return response
-          }
-          // onsuccess返回值不为undefined, 视为调用失败
-          error = result
-        } catch (err) {
-          // 执行onsuccess代码出错
-          error = err
-        }
-      }
-      if (retry-- > 0) {
-        sendMessage(options, onsuccess, onerror, retry)
-      } else {
-        noop(onerror)(error, headers, xhr)
-      }
-    })
-  }
-}
-
-const formatDate = (str, t) => {
-  t = typeof t === 'string' || !isNaN(t) ? new Date(t) : t
-  if (t instanceof Date === false) {
-    t = new Date()
-  }
-  const obj = {
-    yyyyyyyy: t.getFullYear(),
-    yy: t.getFullYear(),
-    MM: t.getMonth()+1,
-    dd: t.getDate(),
-    HH: t.getHours(),
-    hh: t.getHours() % 12,
-    mm: t.getMinutes(),
-    ss: t.getSeconds(),
-    ww: '日一二三四五六'.split('')[t.getDay()]
-  };
-  return str.replace(/([a-z]+)/ig, function ($1){
-    return (obj[$1+$1] === 0 ? '0' : obj[$1+$1]) || ('0' + obj[$1]).slice(-2);
-  });
-}
 
 const setInfo = (data) => {
   data = Object.assign({
@@ -129,25 +48,6 @@ const getMarkdown = (markdownBody) => {
   //   }[s1] || s))
 }
 
-const insertAfter = (newElement, targetElement) => {
-  const parent = targetElement.parentNode
-  if(parent.lastChild === targetElement){
-    parent.appendChild(newElement)
-  }else{
-    parent.insertBefore(newElement, targetElement.nextSibling)
-  }
-}
-
-const getUrl = (prefix, link) => {
-  if (!link) return ''
-  if (/^(http|https)/.test(link)) {
-    return link
-  }
-  if (/^\/\//.test(link)) {
-    return prefix.split('//')[0] + link
-  }
-  return prefix + link
-}
 const convert = async (options, customOptions) => {
   const context = {}
   const defaultOptions = {
@@ -189,6 +89,9 @@ const convert = async (options, customOptions) => {
     return result
   }
   const markdownBody = query(selectors.body, options.context).cloneNode(true)
+  const fileName = (getText(selectors.title) || document.title)
+  const realName = fileName.replace(/[\\\/\?<>:'\*\|]/g, '_')
+  noop(hook.extract)(context, { markdownBody, fileName, realName })
   queryAll(selectors.copyBtn, markdownBody).map(item => item.parentElement.removeChild(item))
   queryAll('[data-id]', markdownBody).map(item => item.removeAttribute('data-id'))
   if (selectors.invalid) {
@@ -214,9 +117,17 @@ const convert = async (options, customOptions) => {
     })
   }
   const urls = []
-  const fileName = (getText(selectors.title) || document.title)
-  const realName = fileName.replace(/[\\\/\?<>:'\*\|]/g, '_')
   const files = queryAll('img', markdownBody).map(item => {
+    const downloadName = item.getAttribute('downloadName')
+    const downloadUrl = item.getAttribute('downloadUrl')
+    if (downloadName && downloadUrl) {
+      item.src = './' + downloadName
+      options.urls !== false && urls.push(downloadUrl)
+      return {
+        name: downloadName,
+        downloadUrl
+      }
+    }
     const src = item.getAttribute(options.lazyKey) || item.src
     const url = src.replace(/\?$/, '')
     const ext = getExt(url)
@@ -235,11 +146,12 @@ const convert = async (options, customOptions) => {
     home: getUrl(location.origin, getAttribute('href', selectors.userLink)),
     description: markdownBody.innerText.replace(/^([\n\s]+)/g, '').replace(/\n/g, ' ').slice(0, 50) + '...',
   })
-  noop(hook.extract)(context)
   const markdwonDoc = html2markdown(info + getMarkdown(markdownBody), {})
+  const copyright = '> 当前文档由 [markdown文档下载插件](https://github.com/kscript/markdown-download) 下载, 原文链接: [' + fileName + '](' + location.href + ')  '
+  const content = await noop(hook.formatContent)(context, { markdownBody, markdwonDoc })
   files.push({
     name: realName + '.md',
-    content:  markdwonDoc + '\n\n' + '> 当前文档由 [markdown文档下载插件](https://github.com/kscript/markdown-download) 下载, 原文链接: [' + fileName + '](' + location.href + ')  '
+    content:  (content && typeof content === 'string' ? content: markdwonDoc )+ '\n\n' + copyright
   })
   files.push({
     name: realName + '/urls',
@@ -259,19 +171,17 @@ const extract = async (options, customOptions) => {
   return datas
 }
 
-if (isBroswer) {
-  if (isExtension) {
-    chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
-      if (message instanceof Object) {
-        if (message.type === 'download') {
-          if (typeof websites[message.website] === 'function') {
-            await websites[message.website](extract)
-          }
+if (isExtension) {
+  chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+    if (message instanceof Object) {
+      if (message.type === 'download') {
+        if (typeof websites[message.website] === 'function') {
+          await websites[message.website](extract)
         }
       }
-      sendResponse('')
-    })
-  }
+    }
+    sendResponse('')
+  })
 }
 
 export default convert

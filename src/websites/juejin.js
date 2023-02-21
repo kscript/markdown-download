@@ -1,3 +1,4 @@
+import md5 from 'md5'
 export const hosts = ['juejin.im', 'juejin.cn']
 
 export const options = {
@@ -19,7 +20,18 @@ export const options = {
   }
 }
 
-export const hook = {}
+export const hook = {
+  extract (context, { markdownBody, realName }) {
+    markdownBody.querySelectorAll('img').forEach(item => {
+      if (typeof item.src === 'string' && /\/equation\?tex=/.test(item.src)) {
+        const ext = 'svg'
+        const name = realName + '/' + md5(item.src) + (ext ? '.' + ext : '')
+        item.setAttribute('downloadName', name)
+        item.setAttribute('downloadUrl', item.src)
+      }
+    })
+  }
+}
 
 export const config = {
   hosts,

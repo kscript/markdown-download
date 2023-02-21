@@ -1,3 +1,4 @@
+import md5 from 'md5'
 export const hosts = ['www.jianshu.com', 'jianshu.com']
 
 export const options = {
@@ -7,7 +8,7 @@ export const options = {
   code: false,
   selectors: {
     title: 'section+h1',
-    body: 'header+div article',
+    body: 'header+div article,.post .article',
     copyBtn: '.VJbwyy',
     userName: '._3U4Smb ._1OhGeD',
     userLink: '._3U4Smb ._1OhGeD',
@@ -16,7 +17,16 @@ export const options = {
   }
 }
 
-export const hook = {}
+export const hook = {
+  extract (context, { markdownBody, realName }) {
+    markdownBody.querySelectorAll('.math-block,.math-inline').forEach(item => {
+      const ext = 'svg'
+      const name = realName + '/' + md5(item.src) + (ext ? '.' + ext : '')
+      item.setAttribute('downloadName', name)
+      item.setAttribute('downloadUrl', item.src)
+    })
+  }
+}
 
 export const config = {
   hosts,
