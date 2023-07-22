@@ -4,7 +4,8 @@ import FileSaver from 'jszip/vendor/FileSaver'
 
 const defaultOptions = {
   partLimit: 1e3,
-  requestLimit: 5
+  requestLimit: 5,
+  retry: 3
 }
 
 const options = Object.assign({}, defaultOptions)
@@ -19,30 +20,40 @@ export const noop = (func, defaultFunc) => {
 }
 
 export const ajax = (options) => {
-  var xhr = new XMLHttpRequest()
-  options.method = options.method || 'get'
-  xhr.responseType = options.dataType || 'json';
-  xhr.onreadystatechange = () => {
-    if (xhr.readyState == 4) {
-      try {
-        noop(options.success)(xhr.response, xhr)
-      } catch (err) {
-        noop(options.error)(err, xhr)
+  options = Object.assign({}, defaultOptions, options)
+  const core = (retry = 3) => {
+    const xhr = new XMLHttpRequest()
+    options.method = options.method || 'get'
+    xhr.responseType = options.dataType || 'json';
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState == 4) {
+        try {
+          noop(options.success)(xhr.response, xhr)
+        } catch (err) {
+          noop(options.error)(err, xhr)
+        }
       }
     }
+    xhr.error = (err) => {
+      if (retry--) {
+        console.log(err)
+        noop(options.error)(err, xhr)
+      } else {
+        setTimeout(() => {
+          core(retry - 1)
+        }, 3e3)
+      }
+    }
+    if (/post/i.test(options.method)) {
+      xhr.open(options.method, options.url, options.async !== false)
+      xhr.setRequestHeader('Content-type', /json/i.test(options.dataType) ? 'application/json' : 'application/x-www-form-urlencoded')
+      xhr.send(options.data)
+    } else {
+      xhr.open(options.method, options.url, options.async !== false)
+      xhr.send()
+    }
   }
-  xhr.error = (err) => {
-    console.log(err)
-    noop(options.error)(err, xhr)
-  }
-  if (/post/i.test(options.method)) {
-    xhr.open(options.method, options.url, options.async !== false)
-    xhr.setRequestHeader('Content-type', /json/i.test(options.dataType) ? 'application/json' : 'application/x-www-form-urlencoded')
-    xhr.send(options.data)
-  } else {
-    xhr.open(options.method, options.url, options.async !== false)
-    xhr.send()
-  }
+  core(options.retry)
 }
 
 export const fetchBlobFile = (file) =>{

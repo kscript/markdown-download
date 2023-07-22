@@ -14,8 +14,8 @@ files.keys().forEach(key => {
   ].includes(website)) {
     const config = files(key)
     const { hook, options, customOptions = {} } = config
-    websites[website] = (extract) => extract(options, customOptions)
     hooks[website] = hook instanceof Object ? hook : {}
+    websites[website] = (extract) => extract(options, customOptions, hooks[website])
     if (assigns[website]) {
       assigns[website] = Object.assign({
         website

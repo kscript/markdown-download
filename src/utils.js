@@ -102,14 +102,14 @@ export const getUrl = (prefix, link) => {
   }
   return prefix + link
 }
-export const tex2svg = (markdwonDoc) => {
-  return markdwonDoc.replace(/<ztext>(.*?)<\/ztext>/g, (s, s1) => {
-    const tex = decodeURIComponent(s1)
-    const svg = MathJax.tex2svg(tex)
-    svg.setAttribute('data-tex', tex)
-    svg.style.display = 'inline'
-    return svg.outerHTML
-  })
+export const exec = async (...rest) => {
+    if (!rest.length) return exec.returnValue
+    exec.returnValue = false
+    try {
+        exec.returnValue = typeof rest[0] === 'function' && await rest[0](...rest.slice(1))
+    } catch (err) {
+        console.warn(err)
+    }
 }
 
 export default {
@@ -127,5 +127,5 @@ export default {
   formatDate,
   insertAfter,
   getUrl,
-  tex2svg
+  exec
 }

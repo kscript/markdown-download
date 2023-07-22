@@ -1,19 +1,21 @@
 import convert from './'
 import download from './download'
+import * as downloadMarkdown from './markdown'
 import { configs as websiteConfigs } from './websites'
 
 export { convert, download, websiteConfigs }
 
-export const markdownDownload = (options, customOptions) => {
+export const downloader = (options, customOptions) => {
 	const {fileName, files} = convert(options, customOptions)
 	download(fileName, files)
 }
 
 if (typeof window !== 'undefined') {
-	markdownDownload.websiteConfigs = websiteConfigs
-	markdownDownload.convert = convert
-	markdownDownload.download = download
-	window.markdownDownload = markdownDownload
+	downloader.websiteConfigs = websiteConfigs
+	downloader.convert = convert
+	downloader.download = download
+	downloader.downloadMarkdown = downloadMarkdown
+	window.downloader = downloader
 }
 
-export default markdownDownload
+export default downloader
