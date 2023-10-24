@@ -35,13 +35,13 @@ export const ajax = (options) => {
       }
     }
     xhr.error = (err) => {
-      if (retry--) {
-        console.log(err)
-        noop(options.error)(err, xhr)
-      } else {
+      if (retry) {
         setTimeout(() => {
           core(retry - 1)
         }, 3e3)
+      } else {
+        console.log(err)
+        noop(options.error)(err, xhr)
       }
     }
     if (/post/i.test(options.method)) {
