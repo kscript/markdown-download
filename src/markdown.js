@@ -7,19 +7,20 @@ import { query, getExt, getText, getUrl, queryAll, insertAfter, getAttribute, fo
 const setInfo = (data) => {
     data = Object.assign({
         date: formatDate('yyyy-MM-dd HH:mm:ss'),
-        coypright: false,
+        copyright: false,
         url: location.href,
         description: '转载',
+        tag: []
     }, data instanceof Object ? data : {})
     return `---
     title: {{title}}
     date: {{date}}
-    copyright: {{coypright}}
+    copyright: {{copyright}}
     author: {{author}}
     home: {{home}}
     origin: {{origin}}
     url: {{url}}
-    tag: {{tag}}
+    tag: ${ data.tag && data.tag.length ? '\n  - ' + data.tag.join('\n  - ') : '' }
     categories: {{categories}}
     description: {{description}}
     ---
@@ -36,8 +37,8 @@ const getMarkdown = (markdownBody) => {
     //   }[s1] || s))
 }
 
-export const tex2svg = (markdwonDoc) => {
-    return markdwonDoc.replace(/<ztext>(.*?)<\/ztext>/g, (s, s1) => {
+export const tex2svg = (markdownDoc) => {
+    return markdownDoc.replace(/<ztext>(.*?)<\/ztext>/g, (s, s1) => {
         const tex = decodeURIComponent(s1)
         const svg = MathJax.tex2svg(tex)
         svg.setAttribute('data-tex', tex)
@@ -101,6 +102,13 @@ export const formatMarkdownBody = (container, selectors, options, exec) => {
             item.parentElement.replaceChild(span, item)
         })
     }
+    if (selectors.tag) {
+        const tag = []
+        queryAll(selectors.tag).map(item => {
+            tag.push(item.innerText.replace(/(^[\n\s]+|[\n\s]+$)/g, ''))
+        })
+        options.context.tag = tag
+    }
     if (options.link) {
         queryAll('a', markdownBody).map(item => item.href = item.title)
     }
@@ -116,7 +124,7 @@ export const formatMarkdownBody = (container, selectors, options, exec) => {
 }
 
 const extract = async (markdownBody, selectors, options, exec) => {
-    const { origin } = options
+    const { origin, context } = options
     const fileName = getText(selectors.title) || document.title
     const realName = fileName.replace(/[\\\/\?<>:'\*\|]/g, '_')
     const files = queryAll('img', markdownBody).map(item => {
@@ -144,14 +152,15 @@ const extract = async (markdownBody, selectors, options, exec) => {
         origin: origin,
         author: getText(selectors.userName),
         home: getUrl(location.origin, getAttribute('href', selectors.userLink)),
+        tag: context.tag,
         description: markdownBody.innerText.replace(/^([\n\s]+)/g, '').replace(/\n/g, ' ').slice(0, 50) + '...',
     })
-    const markdwonDoc = html2markdown(info + getMarkdown(markdownBody), {})
+    const markdownDoc = html2markdown(info + getMarkdown(markdownBody), {})
     const copyright = formatCopyRight(fileName)
-    const content = await exec('formatContent', { markdownBody, markdwonDoc })
+    const content = await exec('formatContent', { markdownBody, markdownDoc })
     files.push({
         name: realName + '.md',
-        content: (content && typeof content === 'string' ? content : markdwonDoc) + '\n\n' + copyright
+        content: (content && typeof content === 'string' ? content : markdownDoc) + '\n\n' + copyright
     })
     return {
         fileName,
@@ -168,6 +177,7 @@ export const downloadMarkdown = async (...rest) => {
     const verify = async (hookName, data) => {
         return await exec(hook[hookName], context, Object.assign(state, data instanceof Object ? data : {})) instanceof Object
     }
+    options.context = context
 
     if (await verify('beforeExtract')) return exec()
 

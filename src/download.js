@@ -87,8 +87,8 @@ export const partTask = (items, handler, limit) => {
     const currentIndex = index++
     queue = queue.then(() => {
       return new Promise((resolve) => {
-        Promise.all(handler(current, currentIndex)).then(datas => {
-          result.push.apply(result, datas)
+        Promise.all(handler(current, currentIndex)).then(data => {
+          result.push.apply(result, data)
         })
         .finally(() => resolve(result))
       })
@@ -103,7 +103,7 @@ export const partRequest = (fileName, files, { requestLimit } = options) => {
     zip.file(file.name, blob)
     return blob
   }))
-  return partTask(files, handler, requestLimit).then((datas) => {
+  return partTask(files, handler, requestLimit).then(() => {
     return zip.generateAsync({
       type: "blob"
     }).then((content) => {
@@ -120,8 +120,8 @@ export const partRequest = (fileName, files, { requestLimit } = options) => {
 export const partDownload = (fileName, files, { partLimit } = options) => {
   const count = ~~(files.length / partLimit)
   return partTask(files, (files, index) => {
-    const partMame = count >= 1 ? '-p' + (index + 1) + '-' + count : ''
-    const name = fileName + partMame + '.zip'
+    const partName = count >= 1 ? '-p' + (index + 1) + '-' + count : ''
+    const name = fileName + partName + '.zip'
     return [partRequest(name, files, options)]
   }, partLimit)
 }

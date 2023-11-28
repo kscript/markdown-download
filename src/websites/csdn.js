@@ -12,7 +12,8 @@ export const options = {
     userName: '.user-info .name',
     userLink: '.user-info .profile-intro-name-boxTop a',
     invalid: '',
-    unpack: ''
+    unpack: '',
+    tag: '.blog-tags-box .tag-link'
   }
 }
 

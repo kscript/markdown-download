@@ -12,7 +12,8 @@ export const options = {
     userName: '.article-box .article-box__meta .item-list .item:nth-child(2) a',
     userLink: '.article-box .article-box__meta .item-list .item:nth-child(2) a',
     invalid: '',
-    unpack: ''
+    unpack: '',
+    tag: '.article-box__group .group-card__name'
   }
 }
 

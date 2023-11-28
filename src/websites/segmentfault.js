@@ -12,7 +12,8 @@ export const options = {
     userName: '.card-body picture+strong',
     userLink: '.card-body h1+div a:nth-child(1)',
     invalid: '',
-    unpack: ''
+    unpack: '',
+    tag: '.article-wrap .badge-tag'
   }
 }
 

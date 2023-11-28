@@ -16,7 +16,8 @@ export const options = {
     userName: '.username .name',
     userLink: '.username',
     invalid: 'style',
-    unpack: ''
+    unpack: '',
+    tag: '.article-end .tag-list .tag-item'
   }
 }
 

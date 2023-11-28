@@ -6,9 +6,9 @@ import {
 import { downloadMarkdown } from './markdown'
 
 const extract = async (options, customOptions, hook) => {
-  const datas = await downloadMarkdown(options, customOptions, hook)
-  datas && sendMessage(datas)
-  return datas
+  const data = await downloadMarkdown(options, customOptions, hook)
+  data && sendMessage(data)
+  return data
 }
 
 if (isExtension) {

@@ -13,7 +13,8 @@ export const options = {
     userName: '._3U4Smb ._1OhGeD',
     userLink: '._3U4Smb ._1OhGeD',
     invalid: '',
-    unpack: ''
+    unpack: '',
+    tag: '._18vaTa ._1OhGeD span'
   }
 }
 

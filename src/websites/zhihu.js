@@ -14,7 +14,8 @@ export const options = {
     userName: '.AuthorInfo-name .UserLink-link',
     userLink: '.AuthorInfo-name .UserLink-link',
     invalid: 'noscript,.ZVideoLinkCard-author',
-    unpack: 'p,figure'
+    unpack: 'p,figure',
+    tag: '.TopicList .Tag-content'
   }
 }
 
@@ -26,8 +27,8 @@ export const hook = {
       item.parentElement.replaceChild(ztext, item)
     })
   },
-  formatContent (context, { markdwonDoc }) {
-    return tex2svg(markdwonDoc)
+  formatContent (context, { markdownDoc }) {
+    return tex2svg(markdownDoc)
   }
 }
 
