@@ -4,8 +4,8 @@ markdown文档下载 chrome插件
 ## 作为插件使用
 1. 在命令行中执行拉取/安装/打包
 ``` cmd
-git clone https://github.com/kscript/download-markdown
-cd download-markdown
+git clone https://github.com/kscript/markdown-download
+cd markdown-download
 npm install
 npm run build
 ```
