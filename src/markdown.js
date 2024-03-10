@@ -3,31 +3,36 @@ import md5 from 'md5'
 import html2markdown from 'html-to-md'
 import 'mathjax/es5/tex-svg'
 import { query, getExt, getText, getUrl, queryAll, insertAfter, getAttribute, formatDate, exec } from './utils'
-
-const setInfo = (data) => {
+const replace = (str, fn) => {
+    fn = typeof fn === 'function' ? fn : (s) => s
+    return str.replace(/\$\{(.*?)\}/g, (s, s1) => fn(s1.replace(/(^\s+|\s+$)/g, '')))
+}
+const setInfo = (data, tpl) => {
     data = Object.assign({
-        date: formatDate('yyyy-MM-dd HH:mm:ss'),
+        now: formatDate('yyyy-MM-dd HH:mm:ss'),
         copyright: false,
         url: location.href,
         description: '转载',
         tag: []
     }, data instanceof Object ? data : {})
-    return `---
-    title: {{title}}
-    date: {{date}}
-    copyright: {{copyright}}
-    author: {{author}}
-    home: {{home}}
-    origin: {{origin}}
-    url: {{url}}
-    tag: ${ data.tag && data.tag.length ? '\n  - ' + data.tag.join('\n  - ') : '' }
-    categories: {{categories}}
-    description: {{description}}
+    tpl = typeof tpl === 'string' ? tpl : `---
+        title: \${title}
+        date: \${now}
+        copyright: \${copyright}
+        author: \${author}
+        home: \${home}
+        origin: \${origin}
+        url: \${url}
+        tag: \${tag}
+        categories: \${categories}
+        description: \${description}
     ---
-    `.replace(/\n\s+/g, '\n').replace(/\{\{(.*?)\}\}/g, (s, s1) => data[s1] === void 0 ? '' : data[s1])
+    `
+    return replace(tpl.replace(/\n\s+/g, '\n'), (s1) => data[s1] === void 0 ? '' : Array.isArray(data[s1]) ? '\n  - ' + data[s1].join('\n  - ') : data[s1])
 }
-const formatCopyRight = (fileName) => {
-    return `> 当前文档由 [markdown文档下载插件](https://github.com/kscript/markdown-download) 下载, 原文链接: [${fileName}](${location.href})  `
+const formatCopyRight = (data, { retain, copyright }) => {
+    const tpl = retain ? '> 当前文档由 [markdown文档下载插件](https://github.com/kscript/markdown-download) 下载, 原文链接: [${title}](${url})  ' : copyright
+    return typeof tpl === 'string' ? '\n\n' + replace(tpl, (s1) => data[s1] || '') + '\n\n' : ''
 }
 const getMarkdown = (markdownBody) => {
     return markdownBody.innerHTML
@@ -49,23 +54,12 @@ export const tex2svg = (markdownDoc) => {
 
 const formatParams = (options, customOptions, hook) => {
     const defaultOptions = {
-        origin: 'juejin',
-        // 处理链接
-        link: true,
-        // 处理换行
         br: false,
-        // 处理代码块
         code: false,
+        link: true,
         lazyKey: 'data-src',
-        selectors: {
-            title: '.article-title',
-            body: '.markdown-body',
-            copyBtn: '.copy-code-btn',
-            userName: '.username .name',
-            userLink: '.username',
-            invalid: 'style',
-            unpack: ''
-        }
+        origin: '',
+        selectors: {}
     }
     customOptions = customOptions instanceof Object ? customOptions : {}
     options = merge({}, defaultOptions, options instanceof Object ? options : {}, customOptions)
@@ -124,7 +118,7 @@ export const formatMarkdownBody = (container, selectors, options, exec) => {
 }
 
 const extract = async (markdownBody, selectors, options, exec) => {
-    const { origin, context } = options
+    const { origin, context, localOptions = {} } = options
     const fileName = getText(selectors.title) || document.title
     const realName = fileName.replace(/[\\\/\?<>:'\*\|]/g, '_')
     const files = queryAll('img', markdownBody).map(item => {
@@ -154,13 +148,13 @@ const extract = async (markdownBody, selectors, options, exec) => {
         home: getUrl(location.origin, getAttribute('href', selectors.userLink)),
         tag: context.tag,
         description: markdownBody.innerText.replace(/^([\n\s]+)/g, '').replace(/\n/g, ' ').slice(0, 50) + '...',
-    })
+    }, localOptions.tpl)
     const markdownDoc = html2markdown(info + getMarkdown(markdownBody), {})
-    const copyright = formatCopyRight(fileName)
+    const copyright = formatCopyRight({ title: fileName, url: location.href }, localOptions)
     const content = await exec('formatContent', { markdownBody, markdownDoc })
     files.push({
         name: realName + '.md',
-        content: (content && typeof content === 'string' ? content : markdownDoc) + '\n\n' + copyright
+        content: `${content && typeof content === 'string' ? content : markdownDoc}${copyright}`
     })
     return {
         fileName,

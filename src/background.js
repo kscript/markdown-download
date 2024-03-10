@@ -25,37 +25,37 @@ const sendCallback = (sendResponse, responseHeaders) => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const { type, responseHeaders } = message
   const { url, data, dataType, callback } = message
-  const { fileName, files, options } = message
+  const { fileName, files, options = {} } = message
   const { sendSuccess, sendError } = sendCallback(sendResponse, responseHeaders)
-  if (/(get|post)/i.test(type)) {
-    ajax({
-      url,
-      method: type,
-      data,
-      dataType,
-      success (data, xhr) {
-        if (/text|blob/i.test(dataType)) {
-          sendSuccess(data, xhr)
-        } else {
-          const obj = dataType === 'text' ? data : JSON.parse(data)
-          const result = /^json$/i.test(dataType) ? {
-            callback: noop(callback),
-            data: obj
-          } : data
-          if (typeof callback === 'string' && callback) {
-            sendSuccess(result, xhr)
+    if (/(get|post)/i.test(type)) {
+      ajax({
+        url,
+        method: type,
+        data,
+        dataType,
+        success (data, xhr) {
+          if (/text|blob/i.test(dataType)) {
+            sendSuccess(data, xhr)
           } else {
-            sendSuccess(obj, xhr)
+            const obj = dataType === 'text' ? data : JSON.parse(data)
+            const result = /^json$/i.test(dataType) ? {
+              callback: noop(callback),
+              data: obj
+            } : data
+            if (typeof callback === 'string' && callback) {
+              sendSuccess(result, xhr)
+            } else {
+              sendSuccess(obj, xhr)
+            }
           }
+        },
+        error (error, xhr) {
+          sendError(error, xhr)
         }
-      },
-      error (error, xhr) {
-        sendError(error, xhr)
-      }
-    })
-  } else if (type === 'download') {
-    downloadZip(fileName, files, options)
-  }
+      })
+    } else if (type === 'download') {
+      downloadZip(fileName, files, options)
+    }
   return true
 })
 

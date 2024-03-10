@@ -1,7 +1,7 @@
 import path from 'path-browserify'
 
-export const isBroswer = typeof window !== 'undefined' && window instanceof Object
-export const isExtension = isBroswer && window.chrome instanceof Object && window.chrome.runtime
+export const isBrowser = typeof window !== 'undefined' && window instanceof Object
+export const isExtension = isBrowser && window.chrome instanceof Object && window.chrome.runtime
 export const getExt = (fileName) => {
   return path.parse(fileName).ext.slice(1)
 }
@@ -111,9 +111,15 @@ export const exec = async (...rest) => {
         console.warn(err)
     }
 }
-
+export const getLocalOptions = () => {
+  return new Promise((resolve) => {
+    chrome.storage.local.get('localOptions', ({ localOptions }) => {
+      resolve(localOptions instanceof Object ? localOptions : {})
+    })
+  })
+}
 export default {
-  isBroswer,
+  isBrowser,
   isExtension,
   getExt,
   query,
@@ -127,5 +133,6 @@ export default {
   formatDate,
   insertAfter,
   getUrl,
-  exec
+  exec,
+  getLocalOptions
 }

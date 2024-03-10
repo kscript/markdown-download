@@ -2,11 +2,15 @@ import { websites } from './websites'
 import { 
   isExtension,
   sendMessage,
+  getLocalOptions
 } from './utils'
 import { downloadMarkdown } from './markdown'
 
 const extract = async (options, customOptions, hook) => {
-  const data = await downloadMarkdown(options, customOptions, hook)
+  const localOptions = await getLocalOptions()
+  const data = await downloadMarkdown(options, Object.assign(customOptions, {
+    localOptions
+  }), hook)
   data && sendMessage(data)
   return data
 }

@@ -1,6 +1,7 @@
 import md5 from 'md5'
 import JSZip from 'jszip'
 import FileSaver from 'jszip/vendor/FileSaver'
+import { getLocalOptions } from './utils'
 
 const defaultOptions = {
   partLimit: 1e3,
@@ -13,14 +14,16 @@ const options = Object.assign({}, defaultOptions)
 export const mergeOptions = (newOptions) => {
   return Object.assign(options, defaultOptions, newOptions instanceof Object ? newOptions : {})
 }
-
+export const mergeLocalOptions = async () => {
+  return Object.assign(mergeOptions(await getLocalOptions()))
+}
 
 export const noop = (func, defaultFunc) => {
   return typeof func === 'function' ? func : typeof defaultFunc === 'function' ? defaultFunc : () => {}
 }
 
-export const ajax = (options) => {
-  options = Object.assign({}, defaultOptions, options)
+export const ajax = async (options) => {
+  const config = await mergeLocalOptions()
   const core = (retry = 3) => {
     const xhr = new XMLHttpRequest()
     options.method = options.method || 'get'
@@ -53,7 +56,7 @@ export const ajax = (options) => {
       xhr.send()
     }
   }
-  core(options.retry)
+  core(config.retry)
 }
 
 export const fetchBlobFile = (file) =>{
@@ -126,9 +129,9 @@ export const partDownload = (fileName, files, { partLimit } = options) => {
   }, partLimit)
 }
 
-export const downloadZip = (fileName, files, options = {}) => {
+export const downloadZip = async (fileName, files, options = {}) => {
   fileName = fileName || md5(files.map(item => item.downloadUrl).join('|'))
-  return partDownload(fileName, files, mergeOptions(options))
+  return partDownload(fileName, files, await mergeLocalOptions(options))
 }
 
 export default downloadZip
