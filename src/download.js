@@ -26,19 +26,8 @@ export const ajax = async (options) => {
   const config = await mergeLocalOptions()
   const core = (retry = 3) => {
     const xhr = new XMLHttpRequest()
-    options.method = options.method || 'get'
-    xhr.responseType = options.dataType || 'json';
-    xhr.onreadystatechange = () => {
-      if (xhr.readyState == 4) {
-        try {
-          noop(options.success)(xhr.response, xhr)
-        } catch (err) {
-          noop(options.error)(err, xhr)
-        }
-      }
-    }
-    xhr.error = (err) => {
-      if (retry) {
+    const errorCB = (err) => {
+      if (retry--) {
         setTimeout(() => {
           core(retry - 1)
         }, 3e3)
@@ -47,6 +36,22 @@ export const ajax = async (options) => {
         noop(options.error)(err, xhr)
       }
     }
+    options.method = options.method || 'get'
+    xhr.responseType = options.dataType || 'json'
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState == 4) {
+        if (xhr.status === 200) {
+          try {
+            noop(options.success)(xhr.response, xhr)
+          } catch (err) {
+            errorCB(err)
+          }
+        } else {
+          errorCB(new Error('network error'))
+        }
+      }
+    }
+    xhr.error = errorCB
     if (/post/i.test(options.method)) {
       xhr.open(options.method, options.url, options.async !== false)
       xhr.setRequestHeader('Content-type', /json/i.test(options.dataType) ? 'application/json' : 'application/x-www-form-urlencoded')
