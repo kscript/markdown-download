@@ -2,8 +2,11 @@ import path from 'path-browserify'
 
 export const isBrowser = typeof window !== 'undefined' && window instanceof Object
 export const isExtension = isBrowser && window.chrome instanceof Object && window.chrome.runtime
+export const formatName = (name) => {
+  return (typeof name === 'string' ? name : '').replace(/\s/g, '%20').split('?').shift()
+}
 export const getExt = (fileName) => {
-  return path.parse(fileName).ext.slice(1)
+  return formatName(path.parse(fileName).ext.slice(1))
 }
 export const query = (selector, context = document) => {
   if (selector instanceof NodeList || selector instanceof Node) {
@@ -121,6 +124,7 @@ export const getLocalOptions = () => {
 export default {
   isBrowser,
   isExtension,
+  formatName,
   getExt,
   query,
   getText,

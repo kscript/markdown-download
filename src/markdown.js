@@ -2,7 +2,7 @@ import merge from 'webpack-merge'
 import md5 from 'md5'
 import html2markdown from 'html-to-md'
 import 'mathjax/es5/tex-svg'
-import { query, getExt, getText, getUrl, queryAll, insertAfter, getAttribute, formatDate, exec } from './utils'
+import { query, getExt, getText, getUrl, queryAll, insertAfter, getAttribute, formatDate, exec, formatName } from './utils'
 const replace = (str, fn) => {
     fn = typeof fn === 'function' ? fn : (s) => s
     return str.replace(/\$\{(.*?)\}/g, (s, s1) => fn(s1.replace(/(^\s+|\s+$)/g, '')))
@@ -125,7 +125,7 @@ const extract = async (markdownBody, selectors, options, exec) => {
         const downloadName = item.getAttribute('downloadName')
         const downloadUrl = item.getAttribute('downloadUrl')
         if (downloadName && downloadUrl) {
-            item.src = './' + downloadName
+            item.src = './' + formatName(downloadName)
             return {
                 name: downloadName,
                 downloadUrl
@@ -135,7 +135,7 @@ const extract = async (markdownBody, selectors, options, exec) => {
         const url = src.replace(/\?$/, '')
         const ext = getExt(url)
         const name = realName + '/' + md5(url) + (ext ? '.' + ext : '')
-        item.src = './' + name
+        item.src = './' + formatName(name)
         return {
             name,
             downloadUrl: url
