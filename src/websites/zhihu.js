@@ -6,7 +6,7 @@ export const options = {
   link: false,
   br: true,
   code: false,
-  lazyKey: 'data-original',
+  lazyKey: ['data-original', 'data-actualsrc'],
   selectors: {
     title: '.Post-Title',
     body: '.Post-RichText',

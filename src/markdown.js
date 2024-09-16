@@ -131,7 +131,7 @@ const extract = async (markdownBody, selectors, options, exec) => {
                 downloadUrl
             }
         }
-        const src = item.getAttribute(options.lazyKey) || item.src
+        const src = item.getAttribute([].concat(options.lazyKey || []).find(key => item.getAttribute(key)) || 'src')
         const url = src.replace(/\?$/, '')
         const ext = getExt(url)
         const name = realName + '/' + md5(url) + (ext ? '.' + ext : '')
