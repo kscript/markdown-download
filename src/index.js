@@ -1,17 +1,25 @@
 import { websites } from './websites'
 import { 
   isExtension,
-  sendMessage,
-  getLocalOptions
+  sendMessage
 } from './utils'
+import downloadZip from './download'
 import { downloadMarkdown } from './markdown'
+import { getLocalOptions } from './options'
 
 const extract = async (options, customOptions, hook) => {
   const localOptions = await getLocalOptions()
   const data = await downloadMarkdown(options, Object.assign(customOptions, {
     localOptions
   }), hook)
-  data && sendMessage(data)
+  if (data) {
+    if (data.type === 'download') {
+      const { fileName, files, options = {} } = data
+      downloadZip(fileName, files, options)
+    }  else {
+      sendMessage(data)
+    }
+  }
   return data
 }
 

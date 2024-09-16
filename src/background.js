@@ -1,61 +1,30 @@
+import { ajax, blob2array } from './request'
 import { configs } from './websites'
-import downloadZip from './download'
-
-const getHeaders = (xhr, responseHeaders) => {
-  const headers = {}
-  if (Array.isArray(responseHeaders)) {
-    responseHeaders.map(item => {
-      headers[item] = xhr.getResponseHeader(item)
-    })
-  }
-  return headers
-}
-
-const sendCallback = (sendResponse, responseHeaders) => {
-  return {
-    sendSuccess (message, xhr) {
-      sendResponse([null, message, getHeaders(xhr, responseHeaders), xhr])
-    },
-    sendError (error, xhr) {
-      sendResponse([error, null, getHeaders(xhr, responseHeaders), xhr])
-    }
-  }
-}
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  const { type, responseHeaders } = message
-  const { url, data, dataType, callback } = message
-  const { fileName, files, options = {} } = message
-  const { sendSuccess, sendError } = sendCallback(sendResponse, responseHeaders)
-    if (/(get|post)/i.test(type)) {
-      ajax({
-        url,
-        method: type,
-        data,
-        dataType,
-        success (data, xhr) {
-          if (/text|blob/i.test(dataType)) {
-            sendSuccess(data, xhr)
-          } else {
-            const obj = dataType === 'text' ? data : JSON.parse(data)
-            const result = /^json$/i.test(dataType) ? {
-              callback: noop(callback),
-              data: obj
-            } : data
-            if (typeof callback === 'string' && callback) {
-              sendSuccess(result, xhr)
-            } else {
-              sendSuccess(obj, xhr)
-            }
-          }
-        },
-        error (error, xhr) {
-          sendError(error, xhr)
+  const { type } = message
+  const { url, data, dataType } = message
+  if (/(get|post)/i.test(type)) {
+    ajax({
+      url,
+      method: type,
+      data,
+      dataType,
+      success: async (data) => {
+        if (/blob/i.test(dataType)) {
+          sendResponse([null, {
+            data: await blob2array(data),
+            mimeType: data.type
+          }])
+        } else {
+          sendResponse([null, data])
         }
-      })
-    } else if (type === 'download') {
-      downloadZip(fileName, files, options)
-    }
+      },
+      error (error) {
+        sendResponse([error, null])
+      }
+    })
+  }
   return true
 })
 
@@ -71,7 +40,7 @@ const sendMessage = (message, onsuccess) => {
   })
 }
 
-chrome.browserAction.onClicked.addListener((tab) => {
+chrome.action.onClicked.addListener((tab) => {
   const { host } = new URL(tab.url)
   const matched = configs.some(({ website, hosts }) => {
     if (

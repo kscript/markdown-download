@@ -1,5 +1,5 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "markdown文档下载",
   "version": "1.0",
   "description": "",
@@ -9,11 +9,9 @@
     "128": "icon.png"
   },
   "background": {
-    "scripts": [
-      "background.js"
-    ]
+    "service_worker": "background.js"
   },
-  "browser_action": {
+  "action": {
     "default_icon": "icon.png"
   },
   "options_page": "option.html",
@@ -32,13 +30,28 @@
     "contextMenus",
     "tabs",
     "notifications",
-    "webRequest",
-    "webRequestBlocking",
     "storage",
+    "webRequest",
+    "webNavigation",
+    "scripting"
+  ],
+  "host_permissions": [
     "http://*/*",
     "https://*/*"
   ],
+  "externally_connectable": {
+    "matches": [
+      "http://*/*",
+      "https://*/*"
+    ]
+  },
   "web_accessible_resources": [
-    "inject.js"
-  ]
+    {
+      "resources": ["inject.js"],
+      "matches": ["http://*/*", "https://*/*"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
 }

@@ -114,13 +114,7 @@ export const exec = async (...rest) => {
         console.warn(err)
     }
 }
-export const getLocalOptions = () => {
-  return new Promise((resolve) => {
-    chrome.storage.local.get('localOptions', ({ localOptions }) => {
-      resolve(localOptions instanceof Object ? localOptions : {})
-    })
-  })
-}
+
 export default {
   isBrowser,
   isExtension,
@@ -137,6 +131,5 @@ export default {
   formatDate,
   insertAfter,
   getUrl,
-  exec,
-  getLocalOptions
+  exec
 }
