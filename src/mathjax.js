@@ -1,5 +1,5 @@
-require('mathjax/es5/tex-svg')
-const tex2svg = (markdownDoc) => {
+import 'mathjax/es5/tex-svg'
+export const tex2svg = (markdownDoc) => {
   return markdownDoc.replace(/<ztext>(.*?)<\/ztext>/g, (s, s1) => {
     const tex = decodeURIComponent(s1)
     const svg = MathJax.tex2svg(tex)
@@ -8,6 +8,6 @@ const tex2svg = (markdownDoc) => {
     return svg.outerHTML
   })
 }
-Object.assign(module.exports, Object.assign(exports, {
+export default {
   tex2svg
-}))
+}

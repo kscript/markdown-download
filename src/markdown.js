@@ -117,7 +117,7 @@ export const formatMarkdownBody = (container, selectors, options, exec) => {
     return markdownBody
 }
 
-const extract = async (markdownBody, selectors, options, exec) => {
+const extract = async ({ markdownBody, selectors, options, exec, hook }) => {
     const { origin, context, localOptions = {} } = options
     const fileName = getText(selectors.title) || document.title
     const realName = fileName.replace(/[\\\/\?<>:'\*\|]/g, '_')
@@ -151,7 +151,7 @@ const extract = async (markdownBody, selectors, options, exec) => {
     }, localOptions.tpl)
     const markdownDoc = html2markdown(info + getMarkdown(markdownBody), {})
     const copyright = formatCopyRight({ title: fileName, url: location.href }, localOptions)
-    const content = await exec('formatContent', { markdownBody, markdownDoc })
+    const content = await exec(hook['formatContent'], context, { markdownBody, markdownDoc })
     files.push({
         name: realName + '.md',
         content: `${content && typeof content === 'string' ? content : markdownDoc}${copyright}`
@@ -178,7 +178,7 @@ export const downloadMarkdown = async (...rest) => {
     const markdownBody = formatMarkdownBody(container, selectors, options, exec)
     if (await verify('extract', { markdownBody })) return exec()
 
-    const { fileName, files } = await extract(markdownBody, selectors, options, exec)
+    const { fileName, files } = await extract({ markdownBody, selectors, options, exec, hook })
     if (await verify('afterExtract', { fileName, files })) return exec()
 
     return {

@@ -113,6 +113,7 @@ export const exec = async (...rest) => {
     } catch (err) {
         console.warn(err)
     }
+    return exec.returnValue
 }
 
 export default {
