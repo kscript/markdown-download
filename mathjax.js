@@ -1,0 +1,1 @@
+import"mathjax/es5/tex-svg";export const tex2svg=t=>t.replace(/<ztext>(.*?)<\/ztext>/g,((t,e)=>{const x=decodeURIComponent(e),s=MathJax.tex2svg(x);return s.setAttribute("data-tex",x),s.style.display="inline",s.outerHTML}));export default{tex2svg};
