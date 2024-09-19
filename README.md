@@ -42,6 +42,7 @@ markdownDownload(websiteConfigs.juejin, {
 ```
 
 ## 已支持的网站
+[Github Issue](https://github.com/)  
 [掘金](https://juejin.cn/)  
 [知乎专栏](https://zhuanlan.zhihu.com/)  
 [思否专栏](https://segmentfault.com/)  

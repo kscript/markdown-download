@@ -1,4 +1,3 @@
-import { tex2svg } from '../utils'
 export const hosts = ['zhuanlan.zhihu.com']
 
 export const options = {
@@ -28,6 +27,7 @@ export const hook = {
     })
   },
   formatContent (context, { markdownDoc }) {
+    const { tex2svg } = require('../mathjax')
     return tex2svg(markdownDoc)
   }
 }
