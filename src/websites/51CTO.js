@@ -10,10 +10,11 @@ export const options = {
         body: '.editor-preview-side',
         copyBtn: '.copy-btn',
         userName: '.username .blog-user',
-        userLink: '.username',
+        userLink: '.avatar-img',
         invalid: '',
         unpack: '',
-        tag: '.mess-tag .shence_tag'
+        tag: '.mess-tag .shence_tag',
+        categories: '.mess-tag .shence_cate'
     }
 }
 

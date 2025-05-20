@@ -103,6 +103,13 @@ export const formatMarkdownBody = (container, selectors, options, exec) => {
         })
         options.context.tag = tag
     }
+    if (selectors.categories) {
+        const categories = []
+        queryAll(selectors.categories).map(item => {
+            categories.push(item.innerText.replace(/(^[\n\s]+|[\n\s]+$)/g, ''))
+        })
+        options.context.categories = categories
+    }
     if (options.link) {
         queryAll('a', markdownBody).map(item => item.href = item.title)
     }
@@ -147,6 +154,7 @@ const extract = async ({ markdownBody, selectors, options, exec, hook }) => {
         author: getText(selectors.userName),
         home: getUrl(location.origin, getAttribute('href', selectors.userLink)),
         tag: context.tag,
+        categories: context.categories,
         description: markdownBody.innerText.replace(/^([\n\s]+)/g, '').replace(/\n/g, ' ').slice(0, 50) + '...',
     }, localOptions.tpl)
     const markdownDoc = html2markdown(info + getMarkdown(markdownBody), {})
