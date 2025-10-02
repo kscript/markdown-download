@@ -1,5 +1,8 @@
 import { ajax, blob2array } from './request'
 import { configs } from './websites'
+import { getLocal, setWebsite } from './utils'
+
+globalThis.setWebsite = setWebsite
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const { type } = message
@@ -40,9 +43,16 @@ const sendMessage = (message, onsuccess) => {
   })
 }
 
-chrome.action.onClicked.addListener((tab) => {
+chrome.action.onClicked.addListener(async (tab) => {
   const { host } = new URL(tab.url)
-  const matched = configs.some(({ website, hosts }) => {
+  const localWebsites = await getLocal('websites')
+  const localConfigs = localWebsites instanceof Object ? Object.keys(localWebsites).reduce((acc, curr) => {
+    return localWebsites[curr] instanceof Object ? acc.concat({
+      website: curr,
+      hosts: localWebsites[curr].hosts
+    }) : acc
+  }, []) : []
+  const matched = localConfigs.concat(configs).some(({ website, hosts }) => {
     if (
       website && Array.isArray(hosts) && hosts.some(item => item instanceof RegExp ? item.test(host) : item === host)
     ) {

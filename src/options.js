@@ -1,3 +1,5 @@
+import { getLocal } from './utils'
+
 const defaultOptions = {
   partLimit: 1e3,
   requestLimit: 5,
@@ -6,12 +8,9 @@ const defaultOptions = {
 
 export const options = Object.assign({}, defaultOptions)
 
-export const getLocalOptions = () => {
-  return new Promise((resolve) => {
-    chrome.storage.local.get('localOptions', ({ localOptions }) => {
-      resolve(localOptions instanceof Object ? localOptions : {})
-    })
-  })
+export const getLocalOptions = async () => {
+  const localOptions = await getLocal('localOptions')
+  return localOptions instanceof Object ? localOptions : {}
 }
 export const mergeOptions = (newOptions) => {
   return Object.assign(options, defaultOptions, newOptions instanceof Object ? newOptions : {})
