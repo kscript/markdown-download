@@ -47,26 +47,29 @@ chrome.action.onClicked.addListener(async (tab) => {
   const { host } = new URL(tab.url)
   const localWebsites = await getLocal('websites')
   const localConfigs = localWebsites instanceof Object ? Object.keys(localWebsites).reduce((acc, curr) => {
-    return localWebsites[curr] instanceof Object ? acc.concat({
+    const item = localWebsites[curr]
+    return item instanceof Object ? acc.concat({
       website: curr,
-      hosts: localWebsites[curr].hosts
+      hosts: Array.isArray(item.hosts) ? item.hosts.map(item => /^\/(.*?)\/$/.test(item) ? new RegExp(item.slice(1, -1)) : item) : [],
+      item
     }) : acc
-  }, []) : []
-  const matched = localConfigs.concat(configs).some(({ website, hosts }) => {
+  }, []).sort((a, b) => b.item.timestamp - a.item.timestamp) : []
+  const matched = localConfigs.concat(configs).some(({ website, hosts, item }) => {
     if (
       website && Array.isArray(hosts) && hosts.some(item => item instanceof RegExp ? item.test(host) : item === host)
     ) {
       sendMessage({
         type: 'download',
-        website
+        website,
+        from: item ? 'custom' : 'default'
       })
       return true
     }
   })
-  !matched && chrome.notifications.create(Date.now() + String(tab.id), { 
-    type : 'basic',
-    title : '下载提示',
-    message : '当前页面不支持下载',
-    iconUrl : '/icon.png'
+  !matched && chrome.notifications.create(Date.now() + String(tab.id), {
+    type: 'basic',
+    title: '下载提示',
+    message: '当前页面不支持下载',
+    iconUrl: '/icon.png'
   })
 })

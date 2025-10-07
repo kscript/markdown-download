@@ -1,6 +1,6 @@
 {
   "name": "markdown-downloader",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "markdown文章下载",
   "main": "dist/index.js",
   "scripts": {

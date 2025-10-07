@@ -26,7 +26,7 @@ export const queryAll = (selector, context = document) => {
   return [].slice.apply(context.querySelectorAll(selector))
 }
 export const noop = (func, defaultFunc) => {
-  return typeof func === 'function' ? func : typeof defaultFunc === 'function' ? defaultFunc : () => {}
+  return typeof func === 'function' ? func : typeof defaultFunc === 'function' ? defaultFunc : () => { }
 }
 export const encodeUrlData = (data) => {
   let body = ''
@@ -75,23 +75,23 @@ export const formatDate = (str, t) => {
   const obj = {
     yyyyyyyy: t.getFullYear(),
     yy: t.getFullYear(),
-    MM: t.getMonth()+1,
+    MM: t.getMonth() + 1,
     dd: t.getDate(),
     HH: t.getHours(),
     hh: t.getHours() % 12,
     mm: t.getMinutes(),
     ss: t.getSeconds(),
     ww: '日一二三四五六'.split('')[t.getDay()]
-  };
-  return str.replace(/([a-z]+)/ig, function ($1){
-    return (obj[$1+$1] === 0 ? '0' : obj[$1+$1]) || ('0' + obj[$1]).slice(-2);
-  });
+  }
+  return str.replace(/([a-z]+)/ig, function ($1) {
+    return (obj[$1 + $1] === 0 ? '0' : obj[$1 + $1]) || ('0' + obj[$1]).slice(-2)
+  })
 }
 export const insertAfter = (newElement, targetElement) => {
   const parent = targetElement.parentNode
-  if(parent.lastChild === targetElement){
+  if (parent.lastChild === targetElement) {
     parent.appendChild(newElement)
-  }else{
+  } else {
     parent.insertBefore(newElement, targetElement.nextSibling)
   }
 }
@@ -106,14 +106,14 @@ export const getUrl = (prefix, link) => {
   return prefix + link
 }
 export const exec = async (...rest) => {
-    if (!rest.length) return exec.returnValue
-    exec.returnValue = false
-    try {
-        exec.returnValue = typeof rest[0] === 'function' && await rest[0](...rest.slice(1))
-    } catch (err) {
-        console.warn(err)
-    }
-    return exec.returnValue
+  if (!rest.length) return exec.returnValue
+  exec.returnValue = false
+  try {
+    exec.returnValue = typeof rest[0] === 'function' && await rest[0](...rest.slice(1))
+  } catch (err) {
+    console.warn(err)
+  }
+  return exec.returnValue
 }
 export const getLocal = (key) => {
   return new Promise((resolve) => {
@@ -128,17 +128,25 @@ export const setWebsite = async (website, options) => {
     {},
     localWebsites instanceof Object ? localWebsites : {}
   )
-  const valid = website
-    &&
-    options instanceof Object
-    &&
-    Array.isArray(options.hosts)
-    &&
-    options.hosts.length
-    &&
-    (options.selectors || {}).body
-  if (valid) {
+  const rules = [
+    [
+      website && typeof website === 'string',
+      '第一个参数应该是字符串类型, 并且不能为空'
+    ],
+    [
+      Array.isArray(options.hosts) && options.hosts.length,
+      'options.hosts应该是数组，并且长度不能为0'
+    ],
+    [
+      (options.selectors || {}).body,
+      'options.selectors.body不能为空'
+    ]
+  ]
+  const hit = rules.find(item => !item[0])
+  if (!hit) {
     options.origin = website
+    options.timestamp = Date.now()
+    options.hosts = options.hosts.map(item => item.toString())
     Object.assign(
       websites,
       {
@@ -153,6 +161,8 @@ export const setWebsite = async (website, options) => {
     chrome.storage.local.set({
       websites
     })
+  } else {
+    hit[1] && console.warn(hit[1])
   }
   return websites
 }

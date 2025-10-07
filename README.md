@@ -54,32 +54,31 @@ markdownDownload(websiteConfigs.juejin, {
 
 ## 自定义网站配置
 如果某网站没有被支持, 可以自定义网站配置.  
-在控制台选中插件环境, 或者在插件的选项页/背景页, 将示例代码修改为对应网站配置, 并执行
-自定义的网站配置的优先级, 要比默认的网站配置更高
+在文章页面打开控制台， 选中`插件环境`, 或者在插件的`选项页`和`背景页`打开控制台, 将示例代码修改为对应网站配置, 并执行  
 ``` js
-// 注意: 网站域名 和 文章内容选择器为必填项
+// 注释前面带*号的为必填项
 setWebsite(
-		'juejin',
-		{
-				// * 网站域名, 默认配置支持正则, 这里暂不支持
-				hosts: ['juejin.cn'],
-				link: true,
-				br: false,
-				code: false,
-				selectors: {
-						// 标题选择器
-						title: '.article-title',
-						// * 文章内容选择器
-						body: '.markdown-body',
-						// 文章作者用户名选择器
-						userName: '.username .name',
-						// 文章作者链接选择器
-						userLink: '.username',
-						// 无效内容的选择器
-						invalid: 'style',
-						// 文章标签选择器
-						tag: '.article-end .tag-list .tag-item'
-				}
+	'juejin',
+	{
+		// * 匹配域名 插件会将 文章页面的域名 与 数组的每一项元素 依次匹配, 匹配成功则该配置生效
+		hosts: ['juejin.cn'],
+		link: true,
+		br: false,
+		code: false,
+		selectors: {
+			// 标题选择器
+			title: '.article-title',
+			// * 文章内容选择器
+			body: '.markdown-body',
+			// 文章作者用户名选择器
+			userName: '.username .name',
+			// 文章作者链接选择器
+			userLink: '.username',
+			// 无效内容选择器, 文章内容在转换为markdown前会移除这些元素
+			invalid: 'style',
+			// 文章标签选择器
+			tag: '.article-end .tag-list .tag-item'
 		}
+	}
 )
 ```
